@@ -4,48 +4,33 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const links = [
-    {
-        name: 'Panel General',
-        href: '/dashboardAdmin',
-        icon: 'grid_view',
-    },
+    { name: 'Inicio', href: '/dashboardCajero', icon: 'home' },
+
     {
         name: 'Orden',
-        href: '/dashboardAdmin/ventas',
+        href: '/dashboardCajero/ventas',
         icon: 'receipt_long',
     },
     {
         name: 'Inventario',
-        href: '/dashboardAdmin/inventario',
+        href: '/dashboardCajero/inventario',
         icon: 'inventory_2',
-
-    },
-    {
-        name: 'Reportes',
-        href: '/dashboardAdmin/reportes',
-        icon: 'bar_chart',
     },
 ];
 
 const bottomLinks = [
     {
-        name: 'Ajustes',
-        href: '/dashboardAdmin/ajustes',
-        icon: 'settings',
-    }, {
         name: 'Cerrar Sesión',
         href: '/',
         icon: 'logout',
-
     },
 ];
 
-interface NavLinksAdminProps {
-
+interface NavLinksCajeroProps {
     onLinkClick?: () => void;
 }
 
-export default function NavLinksAdmin({ onLinkClick }: NavLinksAdminProps) {
+export default function NavLinksCajero({ onLinkClick }: NavLinksCajeroProps) {
     const pathname = usePathname();
 
     const isActive = (href: string) => pathname === href;

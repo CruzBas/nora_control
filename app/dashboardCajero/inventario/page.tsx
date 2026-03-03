@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import InventoryHeader from '@/app/ui/inventario/InventoryHeader';
 import IngredientsSection from '@/app/ui/inventario/IngredientsSection';
-import ProductsSection from '@/app/ui/inventario/ProductsSection';
-import RecipesSection from '@/app/ui/inventario/RecipesSection';
+
 
 export default function InventarioPage() {
     const [activeTab, setActiveTab] = useState('insumos');
@@ -15,12 +14,15 @@ export default function InventarioPage() {
                 title="Gestión de Inventario"
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
+                showMenu={false}
+                showRecetas={false}
+
             />
 
             <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 animate-in fade-in duration-700">
-                {activeTab === 'insumos' && <IngredientsSection />}
-                {activeTab === 'menu' && <ProductsSection />}
-                {activeTab === 'recetas' && <RecipesSection />}
+                {activeTab === 'insumos' && <IngredientsSection showAgregar={false} />}
+
+
             </main>
         </div>
     );
