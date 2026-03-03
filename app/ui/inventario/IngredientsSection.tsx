@@ -38,46 +38,48 @@ export default function IngredientsSection({
             </div>
 
             <div className="bg-nora-blue-800/40 rounded-3xl border border-nora-blue-700/30 overflow-hidden shadow-sm backdrop-blur-sm">
-                <table className="w-full text-left">
-                    <thead className="bg-nora-blue-900/50 border-b border-nora-blue-700/50">
-                        <tr>
-                            <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest">Nombre</th>
-                            <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-center">Stock Actual</th>
-                            <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-center">Mínimo</th>
-                            <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-nora-blue-700/30">
-                        {ingredients.map((item) => (
-                            <tr key={item.id} className="hover:bg-nora-blue-700/20 transition-colors group">
-                                <td className="px-6 py-4">
-                                    <span className="text-sm font-bold text-nora-gray-100">{item.name}</span>
-                                </td>
-                                <td className="px-6 py-4 text-center">
-                                    <span className={`text-sm font-bold px-3 py-1 rounded-full ${item.stock <= item.min
-                                        ? 'bg-nora-danger/20 text-nora-danger'
-                                        : 'bg-nora-success/20 text-nora-success'
-                                        }`}>
-                                        {item.stock} {item.unit}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-center">
-                                    <span className="text-sm text-nora-gray-400">{item.min} {item.unit}</span>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors">
-                                            <span className="material-symbols-outlined text-sm">edit</span>
-                                        </button>
-                                        <button className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors">
-                                            <span className="material-symbols-outlined text-sm">delete</span>
-                                        </button>
-                                    </div>
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-nora-blue-900/50 border-b border-nora-blue-700/50">
+                            <tr>
+                                <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest whitespace-nowrap">Nombre</th>
+                                <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-center whitespace-nowrap">Stock Actual</th>
+                                <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-center whitespace-nowrap">Mínimo</th>
+                                <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-right whitespace-nowrap">Acciones</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-nora-blue-700/30">
+                            {ingredients.map((item) => (
+                                <tr key={item.id} className="hover:bg-nora-blue-700/20 transition-colors group">
+                                    <td className="px-6 py-4">
+                                        <span className="text-sm font-bold text-nora-gray-100 whitespace-nowrap">{item.name}</span>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className={`text-sm font-bold px-3 py-1 rounded-full whitespace-nowrap ${item.stock <= item.min
+                                            ? 'bg-nora-danger/20 text-nora-danger'
+                                            : 'bg-nora-success/20 text-nora-success'
+                                            }`}>
+                                            {item.stock} {item.unit}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className="text-sm text-nora-gray-400 whitespace-nowrap">{item.min} {item.unit}</span>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors">
+                                                <span className="material-symbols-outlined text-sm">edit</span>
+                                            </button>
+                                            <button className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors">
+                                                <span className="material-symbols-outlined text-sm">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
     );
