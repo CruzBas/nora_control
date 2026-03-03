@@ -1,26 +1,173 @@
 @import "tailwindcss";
 
+/* ============================================
+   NÖRA CONTROL 
+   ============================================
+   Paleta de colores global del sistema.
+   Usar estas variables en todo el proyecto.
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Colores Primarios ── */
+  --nora-blue-900: #0F1E33;
+  /* Fondo body / más oscuro */
+  --nora-blue-800: #162D4A;
+  /* Card background oscuro */
+  --nora-blue-700: #1F3A5F;
+  /* Card background principal */
+  --nora-blue-600: #2A4D7A;
+  /* Hover / superficies elevadas */
+  --nora-blue-500: #3A6399;
+  /* Bordes activos */
+
+  /* ── Color Acento (Naranja/Ámbar) ── */
+  --nora-accent-600: #B5661A;
+  /* Acento oscuro / pressed */
+  --nora-accent-500: #D17A22;
+  /* Acento principal (botones, marca) */
+  --nora-accent-400: #E8922F;
+  /* Acento hover */
+  --nora-accent-300: #F0A94D;
+  /* Acento suave */
+
+  /* ── Neutros ── */
+  --nora-white: #FFFFFF;
+  --nora-gray-100: #F1F5F9;
+  /* Texto claro sobre oscuro */
+  --nora-gray-200: #E2E8F0;
+  --nora-gray-300: #CBD5E1;
+  /* Labels secundarios */
+  --nora-gray-400: #94A3B8;
+  /* Texto placeholder / deshabilitado */
+  --nora-gray-500: #64748B;
+  /* Texto terciario / footer */
+  --nora-gray-600: #475569;
+  --nora-gray-700: #334155;
+  --nora-gray-800: #1E293B;
+  --nora-gray-900: #0F172A;
+
+  /* ── Semánticos ── */
+  --nora-success: #22C55E;
+  --nora-warning: #F59E0B;
+  --nora-danger: #EF4444;
+  --nora-info: #3B82F6;
+
+  /* ── Superficies ── */
+  --nora-surface-glass: rgba(255, 255, 255, 0.05);
+  --nora-border-glass: rgba(255, 255, 255, 0.10);
+  --nora-border-glass-hover: rgba(255, 255, 255, 0.20);
+
+  /* ── Sombras ── */
+  --nora-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --nora-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --nora-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --nora-shadow-accent: 0 4px 20px rgba(209, 122, 34, 0.25);
+
+  /* ── Tipografía ── */
+  --nora-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* ── Radios ── */
+  --nora-radius-sm: 0.5rem;
+  --nora-radius-md: 0.75rem;
+  --nora-radius-lg: 1rem;
+  --nora-radius-xl: 1.5rem;
+
+  /* ── Transiciones ── */
+  --nora-transition-fast: 150ms ease;
+  --nora-transition-base: 250ms ease;
+  --nora-transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Mapping a tokens genéricos (para compatibilidad) ── */
+  --background: var(--nora-blue-900);
+  --foreground: var(--nora-gray-100);
 }
 
+/* ── Tailwind v4 Theme Integration ── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-nora-blue-900: var(--nora-blue-900);
+  --color-nora-blue-800: var(--nora-blue-800);
+  --color-nora-blue-700: var(--nora-blue-700);
+  --color-nora-blue-600: var(--nora-blue-600);
+  --color-nora-blue-500: var(--nora-blue-500);
+
+  --color-nora-accent-600: var(--nora-accent-600);
+  --color-nora-accent-500: var(--nora-accent-500);
+  --color-nora-accent-400: var(--nora-accent-400);
+  --color-nora-accent-300: var(--nora-accent-300);
+
+  --color-nora-gray-100: var(--nora-gray-100);
+  --color-nora-gray-200: var(--nora-gray-200);
+  --color-nora-gray-300: var(--nora-gray-300);
+  --color-nora-gray-400: var(--nora-gray-400);
+  --color-nora-gray-500: var(--nora-gray-500);
+  --color-nora-gray-600: var(--nora-gray-600);
+  --color-nora-gray-700: var(--nora-gray-700);
+  --color-nora-gray-800: var(--nora-gray-800);
+  --color-nora-gray-900: var(--nora-gray-900);
+  --color-nora-white: var(--nora-white);
+
+  --color-nora-success: var(--nora-success);
+  --color-nora-warning: var(--nora-warning);
+  --color-nora-danger: var(--nora-danger);
+  --color-nora-info: var(--nora-info);
+
+  --font-sans: var(--nora-font-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ============================================
+   Estilos base globales
+   ============================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--nora-font-sans);
+  min-height: 100dvh;
+  margin: 0;
+}
+
+
+:focus-visible {
+  outline: 2px solid var(--nora-accent-500);
+  outline-offset: 2px;
+  border-radius: var(--nora-radius-sm);
+}
+
+
+::selection {
+  background: var(--nora-accent-500);
+  color: var(--nora-white);
+}
+
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--nora-blue-900);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--nora-blue-600);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nora-blue-500);
 }
