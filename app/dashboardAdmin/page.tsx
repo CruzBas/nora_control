@@ -20,7 +20,7 @@ export default function DashboardAdminPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     <MetricCard
                         title="Ventas de Hoy"
-                        value="$1,250.00"
+                        value="₡120,000.00"
                         icon="payments"
                         iconColorClass="text-nora-success"
                         iconBgClass="bg-nora-success/10"
