@@ -1,30 +1,32 @@
 'use client';
 
-interface Ingredient {
-    id: string;
-    name: string;
-    stock: number;
-    min: number;
-    unit: string;
-}
+import { useInventory } from '@/app/lib/hooks';
 
 interface AgregarProps {
     showAgregar?: boolean;
-
-}
-
-interface IngredientsSectionProps {
-    ingredients?: Ingredient[];
 }
 
 export default function IngredientsSection({
-    ingredients = [
-        { id: '1', name: 'Grano de Café', stock: 45, min: 10, unit: 'kg' },
-        { id: '2', name: 'Leche Enterprise', stock: 12, min: 20, unit: 'L' },
-        { id: '3', name: 'Azúcar Morena', stock: 8, min: 5, unit: 'kg' },
-    ],
     showAgregar = true
-}: IngredientsSectionProps & AgregarProps) {
+}: AgregarProps) {
+    const { ingredients, loading, error } = useInventory();
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-nora-accent-500"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-8 text-center bg-nora-danger/10 border border-nora-danger/20 rounded-3xl">
+                <p className="text-nora-danger font-bold">Error: {error}</p>
+            </div>
+        );
+    }
+
     return (
         <section className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             <div className="flex justify-between items-center">

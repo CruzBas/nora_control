@@ -1,27 +1,76 @@
 'use client';
+console.log('--- ARCHIVO PAGE.TSX CARGADO ---');
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/app/lib/supabase';
 
 export default function Home() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  useEffect(() => {
+    console.log('Componente Home montado');
+  }, []);
 
-    //Datos Quemados para el login
-    if (email === 'admin@nora.com' && password === 'admin123') {
-      router.push('/dashboardAdmin');
-    } else if (email === 'cajero@nora.com' && password === 'cajero123') {
-      router.push('/dashboardCajero');
-    } else if (email === 'cocina@nora.com' && password === 'cocina123') {
-      router.push('/dashboardCocina');
-    } else {
-      setError('Credenciales incorrectas. Intente con admin@nora.com, cajero@nora.com o cocina@nora.com');
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    alert('Intentando entrar con: ' + email);
+    setError('');
+    setLoading(true);
+
+    try {
+      const { data: { session }, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      alert('Auth terminado. Sesion: ' + (session ? 'SI' : 'NO') + ' Error: ' + (authError ? authError.message : 'Ninguno'));
+
+      if (authError) {
+        console.error('Auth Error:', authError.message);
+        throw authError;
+      }
+
+      if (session) {
+        console.log('Login successful, fetching profile...');
+        // Fetch user profile to get the role
+        const { data: profile, error: profileError } = await supabase
+          .from('usuario')
+          .select('*, rol(nombre)')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.warn('Profile Error (Possible Missing Record in Table):', profileError.message);
+          // Fallback using email if profile fetch fails
+          if (email.includes('admin')) router.push('/dashboardAdmin');
+          else if (email.includes('cajero')) router.push('/dashboardCajero');
+          else if (email.includes('cocina')) router.push('/dashboardCocina');
+          else router.push('/dashboardCajero');
+          return;
+        }
+
+        console.log('Profile found:', profile);
+        const roleName = (profile.rol as any)?.nombre?.toLowerCase() || '';
+
+        if (roleName.includes('admin') || roleName.includes('propietario') || roleName.includes('owner')) {
+          router.push('/dashboardAdmin');
+        } else if (roleName.includes('cashier') || roleName.includes('cajero')) {
+          router.push('/dashboardCajero');
+        } else if (roleName.includes('cook') || roleName.includes('cocina')) {
+          router.push('/dashboardCocina');
+        } else {
+          router.push('/dashboardCajero');
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Credenciales incorrectas o error de conexión.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,6 +135,7 @@ export default function Home() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
               className="
                 w-full px-5 py-4
                 bg-nora-blue-900/60
@@ -97,6 +147,7 @@ export default function Home() {
                 transition-all duration-300
                 placeholder:text-nora-gray-700
                 hover:border-nora-blue-600
+                disabled:opacity-50
               "
               placeholder="admin@nora.com"
             />
@@ -116,6 +167,7 @@ export default function Home() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
               className="
                 w-full px-5 py-4
                 bg-nora-blue-900/60
@@ -127,6 +179,7 @@ export default function Home() {
                 transition-all duration-300
                 placeholder:text-nora-gray-700
                 hover:border-nora-blue-600
+                disabled:opacity-50
               "
               placeholder="••••••••"
             />
@@ -139,30 +192,32 @@ export default function Home() {
             </div>
           )}
 
-          {/* Botón de envío */}
-          <button
-            type="submit"
-            className="
-              w-full py-4 mt-6
-              bg-nora-accent-500
-              hover:bg-nora-accent-400
-              active:bg-nora-accent-600
-              text-white font-black text-sm uppercase tracking-widest
-              rounded-2xl
-              transition-all duration-300
-              active:scale-[0.97]
-              cursor-pointer
-              shadow-lg shadow-nora-accent-500/20
-            "
-          >
-            Entrar al Sistema
-          </button>
         </form>
+        <button
+          onClick={handleLogin as any}
+          disabled={loading}
+          className="
+            w-full py-4 mt-6
+            bg-nora-accent-500
+            hover:bg-nora-accent-400
+            active:bg-nora-accent-600
+            text-white font-black text-sm uppercase tracking-widest
+            rounded-2xl
+            transition-all duration-300
+            active:scale-[0.97]
+            cursor-pointer
+            shadow-lg shadow-nora-accent-500/20
+            disabled:opacity-50 disabled:cursor-not-allowed
+            relative z-20
+          "
+        >
+          {loading ? 'Entrando...' : 'Entrar al Sistema (Debug)'}
+        </button>
 
         {/* Redes o Aux de login */}
         <div className="mt-6 flex justify-center gap-4 relative z-10">
           <p className="text-[10px] text-nora-gray-500 font-bold uppercase tracking-tighter">
-            admin@nora.com | cajero@nora.com | cocina@nora.com
+            Utilice sus credenciales de Supabase
           </p>
         </div>
 

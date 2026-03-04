@@ -2,73 +2,40 @@
 
 import { useState } from 'react';
 import MetricCard from '@/app/ui/MetricCard';
-
-interface OrderItem {
-    name: string;
-    quantity: number;
-    notes?: string;
-}
-
-interface Order {
-    id: string;
-    table: string;
-    time: string;
-    items: OrderItem[];
-    status: 'pending' | 'completed';
-}
-
-const INITIAL_ORDERS: Order[] = [
-    {
-        id: 'K-201',
-        table: 'Mesa 4',
-        time: '5 min',
-        status: 'pending',
-        items: [
-            { name: 'Hamburguesa Nora Especial', quantity: 2, notes: 'Sin cebolla en una' },
-            { name: 'Papas Fritas Grandes', quantity: 1 }
-        ]
-    },
-    {
-        id: 'K-202',
-        table: 'Mesa 8',
-        time: '12 min',
-        status: 'pending',
-        items: [
-            { name: 'Pizza Pepperoni', quantity: 1, notes: 'Bien tostada' },
-            { name: 'Refresco Familiar', quantity: 1 }
-        ]
-    },
-    {
-        id: 'K-203',
-        table: 'Para Llevar',
-        time: '3 min',
-        status: 'pending',
-        items: [
-            { name: 'Ensalada César', quantity: 1 },
-            { name: 'Batido de Fresas', quantity: 1, notes: 'Poca azúcar' }
-        ]
-    },
-    {
-        id: 'K-204',
-        table: 'Mesa 2',
-        time: '15 min',
-        status: 'pending',
-        items: [
-            { name: 'Sopa de Mariscos', quantity: 2 },
-            { name: 'Arroz con Pollo', quantity: 1, notes: 'Sin culantro' },
-            { name: 'Cerveza Nacional', quantity: 3 }
-        ]
-    }
-];
+import { useOrders, Order } from '@/app/lib/hooks';
 
 export default function DashboardCocina() {
-    const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+    const { orders, loading, error, markAsCompleted } = useOrders();
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-    const markAsCompleted = (id: string) => {
-        setOrders(orders.filter(order => order.id !== id));
+    const handleMarkAsCompleted = (id: string) => {
+        markAsCompleted(id);
         setSelectedOrder(null);
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-nora-blue-900">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-nora-accent-500"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-nora-blue-900 p-4 text-center">
+                <span className="material-symbols-outlined text-6xl text-nora-danger mb-4">error</span>
+                <h2 className="text-2xl font-bold text-white mb-2">Error al cargar pedidos</h2>
+                <p className="text-nora-gray-400 mb-6">{error}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-3 bg-nora-accent-500 text-white rounded-xl font-bold hover:bg-nora-accent-400 transition-colors"
+                >
+                    Reintentar
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col min-h-screen bg-nora-blue-900 group/dashboard p-6 md:p-8">
@@ -98,15 +65,9 @@ export default function DashboardCocina() {
                             value={`${order.items.reduce((acc, item) => acc + item.quantity, 0)} ítems`}
                             icon="restaurant"
                             badge={order.time}
-                            badgeColorClass={
-                                parseInt(order.time) > 10
-                                    ? 'bg-nora-danger/20 text-nora-danger border border-nora-danger/30'
-                                    : 'bg-nora-accent-500/20 text-nora-accent-400 border border-nora-accent-500/30'
-                            }
+                            badgeColorClass="bg-nora-accent-500/20 text-nora-accent-400 border border-nora-accent-500/30"
                             iconBgClass="bg-nora-blue-700/40"
                             iconColorClass="text-nora-gray-300 group-hover/card:text-nora-accent-400 transition-colors"
-                            accentBorder={parseInt(order.time) > 10}
-                            accentBorderClass="border-l-nora-danger"
                         />
                     </div>
                 ))}
@@ -177,7 +138,7 @@ export default function DashboardCocina() {
                                 VOLVER
                             </button>
                             <button
-                                onClick={() => markAsCompleted(selectedOrder.id)}
+                                onClick={() => handleMarkAsCompleted(selectedOrder.id)}
                                 className="flex-[2] py-4 px-6 rounded-2xl bg-nora-success text-white font-black hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-nora-success/20 flex items-center justify-center gap-2"
                             >
                                 <span className="material-symbols-outlined">check_circle</span>
