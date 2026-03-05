@@ -1,16 +1,16 @@
 'use client';
 
-import { MagnifyingGlassIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
-export default function VentasHeader() {
+interface VentasHeaderProps {
+    onCierreCaja?: () => void;
+}
+
+export default function VentasHeader({ onCierreCaja }: VentasHeaderProps) {
     return (
         <header className="h-auto min-h-[4rem] py-3 lg:py-0 lg:h-16 bg-nora-blue-800 border-b border-nora-blue-700 flex flex-col lg:flex-row items-center justify-between px-4 lg:px-6 sticky top-0 z-30 backdrop-blur-md bg-opacity-80 gap-3 lg:gap-0">
-            <div className="flex items-center w-full lg:w-auto justify-between lg:justify-start">
-
+            <div className="flex items-center w-full lg:w-auto justify-between lg:justify-start gap-3">
                 <h1 className="text-lg lg:text-xl font-black text-nora-white uppercase tracking-tight truncate">Punto de Venta</h1>
-
-
                 <div className="lg:hidden h-8 w-8 rounded-full bg-nora-blue-700 border border-nora-blue-600 flex items-center justify-center text-nora-white font-bold text-[10px]">
                     AU
                 </div>
@@ -29,7 +29,15 @@ export default function VentasHeader() {
                 </div>
             </div>
 
-
+            {onCierreCaja && (
+                <button
+                    onClick={onCierreCaja}
+                    className="order-2 lg:order-3 flex items-center gap-2 px-4 py-2 bg-nora-blue-700/50 border border-nora-blue-600 rounded-xl text-nora-gray-300 hover:text-nora-white hover:border-nora-accent-500/50 hover:bg-nora-blue-700 transition-all text-sm font-bold whitespace-nowrap"
+                >
+                    <span className="material-symbols-outlined text-lg leading-none">point_of_sale</span>
+                    Cierre de Caja
+                </button>
+            )}
         </header>
     );
 }

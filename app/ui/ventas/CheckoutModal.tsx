@@ -2,25 +2,25 @@
 
 import { XMarkIcon, BanknotesIcon, CreditCardIcon, DevicePhoneMobileIcon, EllipsisHorizontalCircleIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
+import { MetodoPago } from '@/lib/types';
 
 interface CheckoutModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onFinish: () => void;
+    onFinish: (clienteNombre: string, observaciones: string) => void;
     total: number;
+    loading?: boolean;
 }
 
-export default function CheckoutModal({ isOpen, onClose, onFinish, total }: CheckoutModalProps) {
-    const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+export default function CheckoutModal({ isOpen, onClose, onFinish, total, loading = false }: CheckoutModalProps) {
+    const [clienteNombre, setClienteNombre] = useState('');
+    const [observaciones, setObservaciones] = useState('');
 
     if (!isOpen) return null;
 
-    const paymentMethods = [
-        { id: 'cash', name: 'Efectivo', icon: <BanknotesIcon className="h-8 w-8 text-green-400" /> },
-        { id: 'card', name: 'Tarjeta', icon: <CreditCardIcon className="h-8 w-8 text-blue-400" /> },
-        { id: 'sinpe', name: 'SINPE', icon: <DevicePhoneMobileIcon className="h-8 w-8 text-purple-400" /> },
-        { id: 'other', name: 'Otro', icon: <EllipsisHorizontalCircleIcon className="h-8 w-8 text-nora-gray-400" /> },
-    ];
+    const handleFinish = () => {
+        onFinish(clienteNombre.trim() || 'Cliente', observaciones.trim());
+    };
 
     return (
         <div className="fixed inset-0 bg-nora-blue-900/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -33,52 +33,67 @@ export default function CheckoutModal({ isOpen, onClose, onFinish, total }: Chec
                     >
                         <XMarkIcon className="h-5 w-5" />
                     </button>
-                    <h3 className="text-2xl font-black text-nora-white mb-2 uppercase tracking-tighter">Confirmar Venta</h3>
-                    <p className="text-nora-gray-400 text-sm">Monto total a cobrar</p>
-                    <div className="text-4xl font-black text-nora-accent-400 mt-2">
+                    <h3 className="text-2xl font-black text-nora-white mb-1 uppercase tracking-tighter">Confirmar Orden</h3>
+                    <p className="text-nora-gray-400 text-sm mb-3">La orden irá a cocina para preparación</p>
+                    <div className="text-4xl font-black text-nora-accent-400">
                         ₡{total.toLocaleString('es-CR')}
                     </div>
                 </div>
 
-
-                <div className="p-8 space-y-6">
-                    <p className="text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center">Seleccione Método de Pago</p>
-                    <div className="grid grid-cols-2 gap-4">
-                        {paymentMethods.map((method) => (
-                            <button
-                                key={method.id}
-                                onClick={() => setSelectedMethod(method.id)}
-                                className={`group p-6 border-2 rounded-3xl flex flex-col items-center transition-all duration-300 active:scale-95
-                  ${selectedMethod === method.id
-                                        ? 'border-nora-accent-500 bg-nora-accent-500/10'
-                                        : 'border-nora-blue-700 hover:border-nora-accent-500/50 hover:bg-nora-accent-500/5'
-                                    }`}
-                            >
-                                <div className={`mb-3 transition-transform ${selectedMethod === method.id ? 'scale-110' : 'group-hover:scale-110'}`}>
-                                    {method.icon}
-                                </div>
-                                <span className={`font-bold text-sm ${selectedMethod === method.id ? 'text-nora-white' : 'text-nora-gray-200 group-hover:text-nora-white'}`}>
-                                    {method.name}
-                                </span>
-                            </button>
-                        ))}
+                <div className="p-8 space-y-5">
+                    {/* Nombre del cliente */}
+                    <div>
+                        <label className="block text-xs font-black text-nora-gray-400 uppercase tracking-widest mb-2">
+                            Nombre del Cliente (opcional)
+                        </label>
+                        <input
+                            value={clienteNombre}
+                            onChange={e => setClienteNombre(e.target.value)}
+                            placeholder="Ej. Juan Pérez, Mesa 3..."
+                            className="w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-white placeholder-nora-gray-600 focus:ring-2 focus:ring-nora-accent-500 outline-none text-sm"
+                            onKeyDown={e => e.key === 'Enter' && handleFinish()}
+                            autoFocus
+                        />
                     </div>
+
+                    {/* Observaciones */}
+                    <div>
+                        <label className="block text-xs font-black text-nora-gray-400 uppercase tracking-widest mb-2">
+                            Observaciones <span className="text-nora-gray-600 font-normal normal-case tracking-normal">(sin cebolla, sin picante, etc.)</span>
+                        </label>
+                        <textarea
+                            value={observaciones}
+                            onChange={e => setObservaciones(e.target.value)}
+                            placeholder="Ej. Sin cebolla, término medio, alérgico al maní..."
+                            rows={3}
+                            className="w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-white placeholder-nora-gray-600 focus:ring-2 focus:ring-nora-accent-500 outline-none text-sm resize-none"
+                        />
+                    </div>
+
+                    <p className="text-xs text-nora-gray-500 text-center">
+                        💳 El cajero cobrará cuando la cocina marque la orden como lista
+                    </p>
                 </div>
 
                 {/* Footer */}
                 <div className="p-6 bg-nora-blue-900/50 flex space-x-4">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-4 text-nora-gray-400 font-bold hover:text-nora-white transition-colors text-sm uppercase tracking-widest"
+                        disabled={loading}
+                        className="flex-1 py-4 text-nora-gray-400 font-bold hover:text-nora-white transition-colors text-sm uppercase tracking-widest disabled:opacity-50"
                     >
                         Cancelar
                     </button>
                     <button
-                        disabled={!selectedMethod}
-                        onClick={onFinish}
-                        className="flex-1 py-4 bg-nora-accent-500 text-nora-white font-black rounded-2xl shadow-lg shadow-nora-accent-500/20 active:scale-[0.98] transition-all enabled:hover:bg-nora-accent-400 disabled:bg-nora-blue-700 disabled:text-nora-gray-600 uppercase tracking-widest text-sm"
+                        onClick={handleFinish}
+                        disabled={loading}
+                        className="flex-[2] py-4 bg-nora-accent-500 text-nora-white font-black rounded-2xl shadow-lg shadow-nora-accent-500/20 active:scale-[0.98] transition-all enabled:hover:bg-nora-accent-400 disabled:opacity-60 uppercase tracking-widest text-sm flex items-center justify-center gap-2"
                     >
-                        Finalizar
+                        {loading ? (
+                            <><div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white" />Enviando...</>
+                        ) : (
+                            <>🍳 Enviar a Cocina</>
+                        )}
                     </button>
                 </div>
             </div>

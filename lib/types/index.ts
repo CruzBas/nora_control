@@ -1,5 +1,5 @@
 /**
- * Tipos para el sistema de órdenes completo.
+ * Base types for the NORA CONTROL application.
  */
 
 export interface BaseEntity {
@@ -35,45 +35,35 @@ export interface RecetaProducto extends BaseEntity {
     inventario?: Inventario;
 }
 
-export type OrdenEstado = 'pendiente' | 'en_preparacion' | 'lista' | 'pagada' | 'cancelada';
+// ── Órdenes ──────────────────────────────────────────────────
+
+export type OrdenEstado = 'pendiente' | 'lista' | 'pagada' | 'cancelada';
 export type MetodoPago = 'efectivo' | 'tarjeta' | 'sinpe' | 'otro';
 
-export interface DetalleOrden {
-    id: string;
+export interface OrdenItem extends BaseEntity {
     orden_id: string;
     receta_id: string;
+    nombre: string;
+    precio: number;
     cantidad: number;
-    precio_unitario: number;
-    subtotal: number;
-    receta?: Receta;
 }
 
 export interface Orden extends BaseEntity {
     empresa_id: string;
-    usuario_id: string;
-    cliente: string | null;
+    cliente_nombre: string;
     estado: OrdenEstado;
+    metodo_pago: MetodoPago | null;
+    observaciones: string | null;
     subtotal: number;
     impuesto: number;
     total: number;
-    metodo_pago: MetodoPago | null;
-    completada_at: string | null;
-    pagada_at: string | null;
-    detalles?: DetalleOrden[];
+    items?: OrdenItem[];
 }
 
-export interface CreateOrdenDto {
-    cliente: string;
-    items: {
-        receta_id: string;
-        cantidad: number;
-        precio_unitario: number;
-    }[];
-}
+// ── Cierre de Caja ────────────────────────────────────────────
 
 export interface CierreCaja extends BaseEntity {
     empresa_id: string;
-    usuario_id: string;
     fecha: string;
     total_efectivo: number;
     total_tarjeta: number;
@@ -81,5 +71,4 @@ export interface CierreCaja extends BaseEntity {
     total_otro: number;
     total_general: number;
     ordenes_count: number;
-    notas: string | null;
 }
