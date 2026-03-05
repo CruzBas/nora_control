@@ -1,5 +1,4 @@
 'use client';
-console.log('--- ARCHIVO PAGE.TSX CARGADO ---');
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,13 +11,8 @@ export default function Home() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  useEffect(() => {
-    console.log('Componente Home montado');
-  }, []);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Intentando entrar con: ' + email);
     setError('');
     setLoading(true);
 
@@ -28,16 +22,10 @@ export default function Home() {
         password,
       });
 
-      alert('Auth terminado. Sesion: ' + (session ? 'SI' : 'NO') + ' Error: ' + (authError ? authError.message : 'Ninguno'));
-
-      if (authError) {
-        console.error('Auth Error:', authError.message);
-        throw authError;
-      }
+      if (authError) throw authError;
 
       if (session) {
-        console.log('Login successful, fetching profile...');
-        // Fetch user profile to get the role
+
         const { data: profile, error: profileError } = await supabase
           .from('usuario')
           .select('*, rol(nombre)')
@@ -45,8 +33,8 @@ export default function Home() {
           .single();
 
         if (profileError) {
-          console.warn('Profile Error (Possible Missing Record in Table):', profileError.message);
-          // Fallback using email if profile fetch fails
+          console.error('Error fetching profile:', profileError);
+
           if (email.includes('admin')) router.push('/dashboardAdmin');
           else if (email.includes('cajero')) router.push('/dashboardCajero');
           else if (email.includes('cocina')) router.push('/dashboardCocina');
@@ -54,7 +42,6 @@ export default function Home() {
           return;
         }
 
-        console.log('Profile found:', profile);
         const roleName = (profile.rol as any)?.nombre?.toLowerCase() || '';
 
         if (roleName.includes('admin') || roleName.includes('propietario') || roleName.includes('owner')) {
@@ -192,27 +179,27 @@ export default function Home() {
             </div>
           )}
 
+          {/* Botón de envío */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="
+              w-full py-4 mt-6
+              bg-nora-accent-500
+              hover:bg-nora-accent-400
+              active:bg-nora-accent-600
+              text-white font-black text-sm uppercase tracking-widest
+              rounded-2xl
+              transition-all duration-300
+              active:scale-[0.97]
+              cursor-pointer
+              shadow-lg shadow-nora-accent-500/20
+              disabled:opacity-50 disabled:cursor-not-allowed
+            "
+          >
+            {loading ? 'Entrando...' : 'Entrar al Sistema'}
+          </button>
         </form>
-        <button
-          onClick={handleLogin as any}
-          disabled={loading}
-          className="
-            w-full py-4 mt-6
-            bg-nora-accent-500
-            hover:bg-nora-accent-400
-            active:bg-nora-accent-600
-            text-white font-black text-sm uppercase tracking-widest
-            rounded-2xl
-            transition-all duration-300
-            active:scale-[0.97]
-            cursor-pointer
-            shadow-lg shadow-nora-accent-500/20
-            disabled:opacity-50 disabled:cursor-not-allowed
-            relative z-20
-          "
-        >
-          {loading ? 'Entrando...' : 'Entrar al Sistema (Debug)'}
-        </button>
 
         {/* Redes o Aux de login */}
         <div className="mt-6 flex justify-center gap-4 relative z-10">
@@ -229,4 +216,3 @@ export default function Home() {
     </main>
   );
 }
-

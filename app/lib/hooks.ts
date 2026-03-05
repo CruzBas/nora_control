@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { api } from './api';
 
 export interface OrderItem {
     name: string;
@@ -18,38 +17,37 @@ export interface Order {
 }
 
 export function useOrders() {
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [orders, setOrders] = useState<Order[]>([
+        {
+            id: 'ORD-001',
+            table: 'Mesa 3',
+            client: 'Juan',
+            total: 12500,
+            time: '14:30',
+            status: 'pending',
+            items: [
+                { name: 'Hamburguesa Clásica', quantity: 2, notes: 'Sin cebolla' },
+                { name: 'Papas Fritas', quantity: 1 }
+            ]
+        },
+        {
+            id: 'ORD-002',
+            table: 'Mesa 5',
+            client: 'María',
+            total: 8900,
+            time: '14:45',
+            status: 'pending',
+            items: [
+                { name: 'Ensalada César', quantity: 1 },
+                { name: 'Limonada', quantity: 1 }
+            ]
+        }
+    ]);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const fetchOrders = async () => {
-        try {
-            setLoading(true);
-            const data = await api.get('/orden');
-
-            // Map backend data to frontend interface
-            const mappedOrders: Order[] = data.map((o: any) => ({
-                id: o.id.substring(0, 5).toUpperCase(), // Simplified ID for UI
-                table: o.cliente || 'Mesa',
-                client: o.cliente || 'Anónimo',
-                total: o.total || 0,
-                time: new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                status: 'pending',
-                items: o.detalle_orden.map((d: any) => ({
-                    name: d.receta?.nombre || 'Producto',
-                    quantity: d.cantidad,
-                    notes: '',
-                }))
-            }));
-
-            setOrders(mappedOrders);
-            setError(null);
-        } catch (err: any) {
-            console.error('Error fetching orders:', err);
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+        // Sin backend: mantenemos el mock
     };
 
     useEffect(() => {
@@ -57,8 +55,6 @@ export function useOrders() {
     }, []);
 
     const markAsCompleted = async (id: string) => {
-        // Here you would call the API to update the status in the DB
-        // For now, we'll just remove it from the state
         setOrders(prev => prev.filter(order => order.id !== id));
     };
 
@@ -74,31 +70,17 @@ export interface Ingredient {
 }
 
 export function useInventory() {
-    const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [ingredients, setIngredients] = useState<Ingredient[]>([
+        { id: '1', name: 'Carne de Res', stock: 50, min: 20, unit: 'kg' },
+        { id: '2', name: 'Pan de Hamburguesa', stock: 15, min: 30, unit: 'unid' }, // low stock
+        { id: '3', name: 'Queso Cheddar', stock: 40, min: 15, unit: 'laminas' },
+        { id: '4', name: 'Tomate', stock: 5, min: 10, unit: 'kg' }, // low stock
+    ]);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const fetchInventory = async () => {
-        try {
-            setLoading(true);
-            const data = await api.get('/inventario');
-
-            const mappedIngredients: Ingredient[] = data.map((i: any) => ({
-                id: i.id,
-                name: i.producto,
-                stock: i.cantidad,
-                min: i.minimo || 0,
-                unit: 'unid', // You might want to add unit to DB
-            }));
-
-            setIngredients(mappedIngredients);
-            setError(null);
-        } catch (err: any) {
-            console.error('Error fetching inventory:', err);
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+        // Sin backend: mantenemos el mock
     };
 
     useEffect(() => {
