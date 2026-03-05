@@ -1,26 +1,67 @@
 'use client';
 
-import { useState } from 'react';
-
-interface ProductItem {
-    id: string;
-    name: string;
-}
-
-interface RecipeItem {
-    ingredientId: string;
-    name: string;
-    quantity: number;
-}
+import { useState, useEffect } from 'react';
+import { useRecipes } from '@/app/lib/hooks';
+import { addIngredientToRecetaAction, removeIngredientFromRecetaAction } from '@/lib/actions/receta.actions';
 
 export default function RecipesSection() {
-    const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+    const {
+        recipes,
+        inventory,
+        selectedIngredients,
+        loading,
+        loadingIngredients,
+        fetchRecipeIngredients
+    } = useRecipes();
 
-    const products: ProductItem[] = [
-        { id: '1', name: 'Café Americano' },
-        { id: '2', name: 'Capuchino' },
-        { id: '3', name: 'Maccchiato' },
-    ];
+    const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+    const [addingIngredient, setAddingIngredient] = useState(false);
+
+    useEffect(() => {
+        if (selectedProductId) {
+            fetchRecipeIngredients(selectedProductId);
+        }
+    }, [selectedProductId]);
+
+    const handleAddIngredient = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!selectedProductId) return;
+
+        setAddingIngredient(true);
+        const formData = new FormData(e.currentTarget);
+        const data = {
+            receta_id: selectedProductId,
+            inventario_id: formData.get('inventario_id') as string,
+            cantidad: Number(formData.get('cantidad'))
+        };
+
+        try {
+            const res = await addIngredientToRecetaAction(data);
+            if (res.success) {
+                await fetchRecipeIngredients(selectedProductId);
+                e.currentTarget.reset();
+            } else {
+                alert(res.error);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setAddingIngredient(false);
+        }
+    };
+
+    const handleDeleteIngredient = async (id: string) => {
+        if (!confirm('¿Eliminar este ingrediente de la receta?')) return;
+
+        try {
+            const res = await removeIngredientFromRecetaAction(id);
+            if (res.success && selectedProductId) {
+                await fetchRecipeIngredients(selectedProductId);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     return (
         <section className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -36,21 +77,28 @@ export default function RecipesSection() {
                         <span className="material-symbols-outlined text-nora-accent-400">restaurant_menu</span>
                         Seleccionar Producto
                     </h4>
-                    <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                        {products.map((p) => (
-                            <button
-                                key={p.id}
-                                onClick={() => setSelectedProductId(p.id)}
-                                className={`w-full text-left p-4 rounded-2xl transition-all duration-200 border ${selectedProductId === p.id
+
+                    {loading ? (
+                        <div className="flex justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-nora-accent-500"></div>
+                        </div>
+                    ) : (
+                        <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                            {recipes.map((p) => (
+                                <button
+                                    key={p.id}
+                                    onClick={() => setSelectedProductId(p.id)}
+                                    className={`w-full text-left p-4 rounded-2xl transition-all duration-200 border ${selectedProductId === p.id
                                         ? 'bg-nora-accent-500/20 border-nora-accent-500 text-nora-accent-400 shadow-lg shadow-nora-accent-500/10'
                                         : 'bg-nora-blue-900/40 border-nora-blue-700/30 text-nora-gray-300 hover:border-nora-blue-600'
-                                    }`}
-                            >
-                                <p className="font-bold uppercase tracking-wider text-xs mb-1">Producto</p>
-                                <p className="font-black text-sm">{p.name}</p>
-                            </button>
-                        ))}
-                    </div>
+                                        }`}
+                                >
+                                    <p className="font-bold uppercase tracking-wider text-xs mb-1">Producto</p>
+                                    <p className="font-black text-sm">{p.nombre}</p>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Editor de Receta */}
@@ -64,7 +112,7 @@ export default function RecipesSection() {
                         <div className="space-y-6">
                             <div className="flex justify-between items-center bg-nora-blue-900/40 p-4 rounded-2xl border border-nora-blue-700/30">
                                 <h4 className="text-xl font-black text-nora-gray-100">
-                                    {products.find(p => p.id === selectedProductId)?.name}
+                                    {recipes.find(p => p.id === selectedProductId)?.nombre}
                                 </h4>
                                 <button className="bg-nora-accent-500 hover:bg-nora-accent-400 text-white px-6 py-2 rounded-xl font-bold transition-all shadow-lg shadow-nora-accent-500/20 active:scale-95">
                                     Guardar Receta
@@ -72,21 +120,35 @@ export default function RecipesSection() {
                             </div>
 
                             <div className="space-y-4">
-                                <div className="flex gap-3">
-                                    <select className="flex-1 p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-nora-gray-200 focus:ring-2 focus:ring-nora-accent-500 outline-none appearance-none">
+                                <form onSubmit={handleAddIngredient} className="flex gap-3">
+                                    <select
+                                        name="inventario_id"
+                                        required
+                                        className="flex-1 p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-nora-gray-200 focus:ring-2 focus:ring-nora-accent-500 outline-none appearance-none"
+                                    >
                                         <option value="">Seleccionar ingrediente...</option>
-                                        <option value="1">Grano de Café</option>
-                                        <option value="2">Leche</option>
+                                        {inventory.map(item => (
+                                            <option key={item.id} value={item.id}>
+                                                {item.producto}
+                                            </option>
+                                        ))}
                                     </select>
                                     <input
+                                        name="cantidad"
+                                        required
                                         type="number"
+                                        step="0.01"
                                         placeholder="Cant."
                                         className="w-24 p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-nora-gray-200 text-center outline-none focus:ring-2 focus:ring-nora-accent-500"
                                     />
-                                    <button className="bg-nora-accent-500/10 text-nora-accent-400 p-4 rounded-2xl font-black hover:bg-nora-accent-500/20 transition-all">
-                                        <span className="material-symbols-outlined">add</span>
+                                    <button
+                                        type="submit"
+                                        disabled={addingIngredient}
+                                        className="bg-nora-accent-500/10 text-nora-accent-400 p-4 rounded-2xl font-black hover:bg-nora-accent-500/20 transition-all disabled:opacity-50"
+                                    >
+                                        <span className="material-symbols-outlined">{addingIngredient ? 'hourglass_empty' : 'add'}</span>
                                     </button>
-                                </div>
+                                </form>
 
                                 <div className="bg-nora-blue-900/20 border border-nora-blue-700/30 rounded-2xl overflow-hidden mt-4">
                                     <table className="w-full text-left text-sm">
@@ -98,11 +160,38 @@ export default function RecipesSection() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-nora-blue-700/10">
-                                            <tr>
-                                                <td colSpan={3} className="px-6 py-10 text-center text-nora-gray-500 italic">
-                                                    No hay ingredientes agregados a esta receta.
-                                                </td>
-                                            </tr>
+                                            {loadingIngredients ? (
+                                                <tr>
+                                                    <td colSpan={3} className="px-6 py-10 text-center">
+                                                        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-nora-accent-500 mx-auto"></div>
+                                                    </td>
+                                                </tr>
+                                            ) : selectedIngredients.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={3} className="px-6 py-10 text-center text-nora-gray-500 italic">
+                                                        No hay ingredientes agregados a esta receta.
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                selectedIngredients.map((item) => (
+                                                    <tr key={item.id}>
+                                                        <td className="px-6 py-4 text-nora-gray-200">
+                                                            {item.inventario?.producto || 'Desconocido'}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center text-nora-accent-400 font-bold">
+                                                            {item.cantidad}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <button
+                                                                onClick={() => handleDeleteIngredient(item.id)}
+                                                                className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
+                                                            >
+                                                                <span className="material-symbols-outlined text-sm">delete</span>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
