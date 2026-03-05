@@ -17,6 +17,7 @@ export interface ApiResponse<T> {
 export interface Inventario extends BaseEntity {
     producto: string;
     cantidad: number;
+    unidad_medida: string;
     minimo: number;
     costo: number;
 }

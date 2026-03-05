@@ -86,6 +86,7 @@ export interface Ingredient {
     id: string;
     name: string;
     cantidad: number;
+    unidad_medida: string;
     minimo: number;
     costo: number;
 }
@@ -106,6 +107,7 @@ export function useInventory() {
                     id: item.id,
                     name: item.producto,
                     cantidad: item.cantidad,
+                    unidad_medida: item.unidad_medida,
                     minimo: item.minimo,
                     costo: item.costo
                 }));

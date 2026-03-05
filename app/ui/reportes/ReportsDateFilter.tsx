@@ -1,14 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-export default function ReportsDateFilter() {
-    const [dateStart, setDateStart] = useState('');
-    const [dateEnd, setDateEnd] = useState('');
+interface ReportsDateFilterProps {
+    initialStart?: string;
+    initialEnd?: string;
+    onFilter?: (start: string, end: string) => void;
+}
+
+export default function ReportsDateFilter({
+    initialStart = '',
+    initialEnd = '',
+    onFilter
+}: ReportsDateFilterProps) {
+    const [dateStart, setDateStart] = useState(initialStart);
+    const [dateEnd, setDateEnd] = useState(initialEnd);
+
+    useEffect(() => {
+        setDateStart(initialStart);
+        setDateEnd(initialEnd);
+    }, [initialStart, initialEnd]);
 
     const handleGenerateReport = () => {
-        console.log('Generating report for:', dateStart, 'to', dateEnd);
-        // Logic for report generation would go here
+        if (onFilter) onFilter(dateStart, dateEnd);
     };
 
     return (

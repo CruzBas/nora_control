@@ -10,6 +10,21 @@ export async function getOrdenesActivasAction(): Promise<ApiResponse<Orden[]>> {
     return ordenService.getActivas();
 }
 
+/** Stats para el dashboard admin */
+export async function getDashboardStatsAction() {
+    return ordenService.getDashboardStats();
+}
+
+/** Ventas por día — últimos N días */
+export async function getVentasSemanaAction(dias = 7) {
+    return ordenService.getVentasSemana(dias);
+}
+
+/** Últimas N órdenes para tabla de transacciones */
+export async function getOrdenesRecientesAction(limite = 10) {
+    return ordenService.getOrdenesRecientes(limite);
+}
+
 /** Crea una nueva orden desde el POS */
 export async function createOrdenAction(
     clienteNombre: string,
@@ -62,4 +77,9 @@ export async function saveCierreCajaAction(
     data: Omit<CierreCaja, 'id' | 'created_at' | 'empresa_id'>
 ): Promise<ApiResponse<CierreCaja>> {
     return ordenService.saveCierre(data);
+}
+
+/** Obtiene el reporte de ventas por rango de fechas */
+export async function getReporteAction(fechaInicio: string, fechaFin: string) {
+    return ordenService.getReporteData(fechaInicio, fechaFin);
 }

@@ -23,6 +23,7 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
         const data = {
             producto: formData.get('producto') as string,
             cantidad: Number(formData.get('cantidad')),
+            unidad_medida: formData.get('unidad_medida') as string,
             minimo: Number(formData.get('minimo')),
             costo: Number(formData.get('costo'))
         };
@@ -61,7 +62,7 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
                         className="w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-white focus:ring-2 focus:ring-nora-accent-500 outline-none"
                     />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                     <div>
                         <label className="block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2">
                             Cantidad Inicial
@@ -74,6 +75,27 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
                             defaultValue="0"
                             className="w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-white focus:ring-2 focus:ring-nora-accent-500 outline-none"
                         />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2">
+                            Unidad
+                        </label>
+                        <select
+                            required
+                            name="unidad_medida"
+                            defaultValue="unidades"
+                            className="w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-white focus:ring-2 focus:ring-nora-accent-500 outline-none"
+                        >
+                            <option value="unidades">Unidades (uds)</option>
+                            <option value="kg">Kilogramos (kg)</option>
+                            <option value="g">Gramos (g)</option>
+                            <option value="L">Litros (L)</option>
+                            <option value="ml">Mililitros (ml)</option>
+                            <option value="lb">Libras (lb)</option>
+                            <option value="oz">Onzas (oz)</option>
+                            <option value="paquetes">Paquetes</option>
+                            <option value="cajas">Cajas</option>
+                        </select>
                     </div>
                     <div>
                         <label className="block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2">

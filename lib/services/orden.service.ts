@@ -87,6 +87,76 @@ export class OrdenService extends BaseService {
         }
     }
 
+    /** Stats para el dashboard admin: ventas de hoy y órdenes activas */
+    async getDashboardStats(): Promise<ApiResponse<{
+        ventasHoy: number;
+        ordenesActivas: number;
+        ventasAyer: number;
+    }>> {
+        try {
+            const supabase = await this.getSupabase();
+            const hoy = new Date().toISOString().split('T')[0];
+            const ayer = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+            const [{ data: hoyData }, { data: ayerData }, { data: activas }] = await Promise.all([
+                supabase.from(this.ordenTable).select('total').eq('estado', 'pagada')
+                    .gte('created_at', `${hoy}T00:00:00`).lte('created_at', `${hoy}T23:59:59`),
+                supabase.from(this.ordenTable).select('total').eq('estado', 'pagada')
+                    .gte('created_at', `${ayer}T00:00:00`).lte('created_at', `${ayer}T23:59:59`),
+                supabase.from(this.ordenTable).select('id').in('estado', ['pendiente', 'lista']),
+            ]);
+
+            const ventasHoy = (hoyData ?? []).reduce((s: number, o: { total: number }) => s + Number(o.total), 0);
+            const ventasAyer = (ayerData ?? []).reduce((s: number, o: { total: number }) => s + Number(o.total), 0);
+            return this.handleResponse({ ventasHoy, ordenesActivas: (activas ?? []).length, ventasAyer }, null);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    }
+
+    /** Ventas agrupadas por día — últimos N días (para el gráfico) */
+    async getVentasSemana(dias = 7): Promise<ApiResponse<{ name: string; total: number }[]>> {
+        try {
+            const supabase = await this.getSupabase();
+            const desde = new Date(Date.now() - (dias - 1) * 86400000).toISOString().split('T')[0];
+            const { data, error } = await supabase
+                .from(this.ordenTable).select('created_at, total')
+                .eq('estado', 'pagada').gte('created_at', `${desde}T00:00:00`);
+
+            if (error) return this.handleError(error);
+
+            const map: Record<string, number> = {};
+            for (let i = dias - 1; i >= 0; i--) {
+                const d = new Date(Date.now() - i * 86400000);
+                map[d.toISOString().split('T')[0]] = 0;
+            }
+            for (const o of (data ?? []) as { created_at: string; total: number }[]) {
+                const key = o.created_at.split('T')[0];
+                if (key in map) map[key] += Number(o.total);
+            }
+            const result = Object.entries(map).map(([date, total]) => ({
+                name: new Date(date + 'T12:00:00').toLocaleDateString('es-CR', { weekday: 'short', day: 'numeric' }),
+                total,
+            }));
+            return this.handleResponse(result, null);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    }
+
+    /** Últimas N órdenes para tabla de transacciones */
+    async getOrdenesRecientes(limite = 10): Promise<ApiResponse<Orden[]>> {
+        try {
+            const supabase = await this.getSupabase();
+            const { data, error } = await supabase
+                .from(this.ordenTable).select('*')
+                .order('created_at', { ascending: false }).limit(limite);
+            return this.handleResponse<Orden[]>(data as Orden[], error);
+        } catch (error) {
+            return this.handleError<Orden[]>(error);
+        }
+    }
+
     /** Marca como pagada y registra el método de pago */
     async pagar(id: string, metodoPago: MetodoPago): Promise<ApiResponse<Orden>> {
         try {
@@ -158,6 +228,67 @@ export class OrdenService extends BaseService {
             return this.handleResponse<CierreCaja>(cierre as CierreCaja, error);
         } catch (error) {
             return this.handleError<CierreCaja>(error);
+        }
+    }
+
+    /** Obtiene el reporte de ventas por rango de fechas */
+    async getReporteData(fechaInicio: string, fechaFin: string): Promise<ApiResponse<{
+        kpis: { revenue: number, salesCount: number, avgTicket: number },
+        topProducts: { name: string, quantity: number, revenue: number }[],
+        chartData: { name: string, value: number }[]
+    }>> {
+        try {
+            const supabase = await this.getSupabase();
+            const { data: ordenes, error } = await supabase
+                .from(this.ordenTable)
+                .select('*, items:orden_item(*)')
+                .eq('estado', 'pagada')
+                .gte('created_at', `${fechaInicio}T00:00:00`)
+                .lte('created_at', `${fechaFin}T23:59:59`)
+                .order('created_at', { ascending: true });
+
+            if (error) return this.handleError(error);
+
+            const ords = (ordenes ?? []) as (Orden & { items?: OrdenItem[] })[];
+            const salesCount = ords.length;
+            const revenue = ords.reduce((sum, o) => sum + o.total, 0);
+            const avgTicket = salesCount > 0 ? revenue / salesCount : 0;
+
+            const productMap: Record<string, { quantity: number, revenue: number }> = {};
+            const chartMap: Record<string, number> = {};
+
+            for (const o of ords) {
+                const dateKey = o.created_at.split('T')[0];
+                chartMap[dateKey] = (chartMap[dateKey] || 0) + o.total;
+
+                for (const item of (o.items ?? [])) {
+                    const pname = item.nombre;
+                    if (!productMap[pname]) {
+                        productMap[pname] = { quantity: 0, revenue: 0 };
+                    }
+                    productMap[pname].quantity += item.cantidad;
+                    productMap[pname].revenue += item.precio * item.cantidad;
+                }
+            }
+
+            const topProducts = Object.entries(productMap)
+                .map(([name, data]) => ({ name, quantity: data.quantity, revenue: data.revenue }))
+                .sort((a, b) => b.quantity - a.quantity)
+                .slice(0, 10);
+
+            const chartData = Object.entries(chartMap).map(([date, value]) => {
+                const parts = date.split('-');
+                const name = parts.length === 3 ? `${parts[2]}/${parts[1]}` : date;
+                return { name, value };
+            });
+
+            return this.handleResponse({
+                kpis: { revenue, salesCount, avgTicket },
+                topProducts,
+                chartData
+            }, null);
+        } catch (error) {
+            return this.handleError(error);
         }
     }
 }

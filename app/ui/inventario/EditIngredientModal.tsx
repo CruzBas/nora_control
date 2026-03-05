@@ -8,6 +8,7 @@ interface Ingredient {
     id: string;
     name: string;
     cantidad: number;
+    unidad_medida: string;
     minimo: number;
     costo: number;
 }
@@ -29,6 +30,7 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
     // Valores del formulario inicializados con los datos del ingrediente
     const [nombre, setNombre] = useState('');
     const [cantidad, setCantidad] = useState('0');
+    const [unidad_medida, setUnidadMedida] = useState('unidades');
     const [minimo, setMinimo] = useState('0');
     const [costo, setCosto] = useState('0');
 
@@ -37,6 +39,7 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
         if (ingredient) {
             setNombre(ingredient.name);
             setCantidad(String(ingredient.cantidad));
+            setUnidadMedida(ingredient.unidad_medida ?? 'unidades');
             setMinimo(String(ingredient.minimo));
             setCosto(String(ingredient.costo));
             setError(null);
@@ -54,6 +57,7 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
             const response = await updateInventarioAction(ingredient.id, {
                 producto: nombre,
                 cantidad: Number(cantidad),
+                unidad_medida: unidad_medida,
                 minimo: Number(minimo),
                 costo: Number(costo),
             });
@@ -90,7 +94,7 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                     <div>
                         <label className={LABEL_CLASS}>Cantidad Actual</label>
                         <input
@@ -102,6 +106,25 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
                             onChange={e => setCantidad(e.target.value)}
                             className={FIELD_CLASS}
                         />
+                    </div>
+                    <div>
+                        <label className={LABEL_CLASS}>Unidad</label>
+                        <select
+                            required
+                            value={unidad_medida}
+                            onChange={e => setUnidadMedida(e.target.value)}
+                            className={FIELD_CLASS}
+                        >
+                            <option value="unidades">Unidades (uds)</option>
+                            <option value="kg">Kilogramos (kg)</option>
+                            <option value="g">Gramos (g)</option>
+                            <option value="L">Litros (L)</option>
+                            <option value="ml">Mililitros (ml)</option>
+                            <option value="lb">Libras (lb)</option>
+                            <option value="oz">Onzas (oz)</option>
+                            <option value="paquetes">Paquetes</option>
+                            <option value="cajas">Cajas</option>
+                        </select>
                     </div>
                     <div>
                         <label className={LABEL_CLASS}>Mínimo Stock</label>

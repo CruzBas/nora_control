@@ -21,7 +21,7 @@ export default function InventoryHeader({ title, activeTab, onTabChange, showMen
             <div className="flex overflow-x-auto max-w-full no-scrollbar pb-1 sm:pb-0">
                 <div className="flex space-x-1 md:space-x-2 whitespace-nowrap">
                     {showMenu && tabs.map((tab) => (
-                        <button hidden
+                        <button
                             key={tab.id}
                             onClick={() => onTabChange(tab.id)}
                             className={`px-3 md:px-4 py-2 text-xs md:text-sm font-bold transition-all duration-200 rounded-lg ${activeTab === tab.id

@@ -1,23 +1,38 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import MetricCard from '../ui/MetricCard';
 import SalesChart from '../ui/SalesChart';
 import TransactionsTable from '../ui/TransactionsTable';
-import { useOrders, useInventory } from '@/app/lib/hooks';
+import { useInventory } from '@/app/lib/hooks';
+import { getDashboardStatsAction } from '@/lib/actions/ordenes.actions';
 
 export default function DashboardAdminPage() {
-    const { orders, loading: ordersLoading } = useOrders();
     const { ingredients, loading: inventoryLoading } = useInventory();
+    const [stats, setStats] = useState<{ ventasHoy: number; ordenesActivas: number; ventasAyer: number } | null>(null);
+    const [statsLoading, setStatsLoading] = useState(true);
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(amount);
-    };
+    useEffect(() => {
+        getDashboardStatsAction().then(res => {
+            if (res.success && res.data) setStats(res.data);
+            setStatsLoading(false);
+        });
+    }, []);
 
-    const totalSalesToday = orders.reduce((acc, order) => acc + order.total, 0);
-    const activeOrdersCount = orders.length;
     const stockAlertsCount = ingredients.filter(i => i.cantidad <= i.minimo).length;
 
-    if (ordersLoading || inventoryLoading) {
+    const fmt = (n: number) => `₡${n.toLocaleString('es-CR', { minimumFractionDigits: 0 })}`;
+
+    // Variación vs ayer
+    const variacion = stats
+        ? stats.ventasAyer > 0
+            ? (((stats.ventasHoy - stats.ventasAyer) / stats.ventasAyer) * 100).toFixed(1)
+            : stats.ventasHoy > 0 ? '+100' : '0'
+        : null;
+
+    const variacionPrefix = variacion !== null && !variacion.startsWith('-') ? '+' : '';
+
+    if (statsLoading || inventoryLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-nora-blue-900">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-nora-accent-500"></div>
@@ -33,34 +48,45 @@ export default function DashboardAdminPage() {
                         Resumen de Negocio
                     </h3>
                     <p className="text-nora-gray-400 font-medium text-sm md:text-base">
-                        Bienvenida de nuevo. Esto es lo que sucede hoy.
+                        {new Date().toLocaleDateString('es-CR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     <MetricCard
                         title="Ventas de Hoy"
-                        value={formatCurrency(totalSalesToday)}
+                        value={fmt(stats?.ventasHoy ?? 0)}
                         icon="payments"
                         iconColorClass="text-nora-success"
                         iconBgClass="bg-nora-success/10"
-                        badge="+calculando..."
-                        badgeColorClass="text-nora-success bg-nora-success/10"
+                        badge={variacion !== null ? `${variacionPrefix}${variacion}% vs ayer` : undefined}
+                        badgeColorClass={
+                            variacion !== null && !variacion.startsWith('-')
+                                ? 'text-nora-success bg-nora-success/10'
+                                : 'text-nora-danger bg-nora-danger/10'
+                        }
                     />
                     <MetricCard
-                        title="Facturas Activas"
-                        value={activeOrdersCount.toString()}
-                        icon="description"
+                        title="Órdenes Activas"
+                        value={(stats?.ordenesActivas ?? 0).toString()}
+                        icon="receipt_long"
                         iconColorClass="text-nora-info"
                         iconBgClass="bg-nora-info/10"
+                        badge={(stats?.ordenesActivas ?? 0) > 0 ? 'En curso' : undefined}
+                        badgeColorClass="text-nora-info bg-nora-info/10"
                     />
                     <MetricCard
                         title="Alertas de Stock"
                         value={stockAlertsCount.toString()}
                         icon="warning"
-                        iconColorClass="text-nora-danger"
-                        iconBgClass="bg-nora-danger/10"
-                        badge={stockAlertsCount > 0 ? "Prioridad" : "OK"}
+                        iconColorClass={stockAlertsCount > 0 ? 'text-nora-danger' : 'text-nora-success'}
+                        iconBgClass={stockAlertsCount > 0 ? 'bg-nora-danger/10' : 'bg-nora-success/10'}
+                        badge={stockAlertsCount > 0 ? 'Revisar' : 'OK'}
+                        badgeColorClass={
+                            stockAlertsCount > 0
+                                ? 'text-nora-danger bg-nora-danger/10'
+                                : 'text-nora-success bg-nora-success/10'
+                        }
                     />
                 </div>
 

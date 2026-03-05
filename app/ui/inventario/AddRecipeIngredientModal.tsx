@@ -70,7 +70,7 @@ export default function AddRecipeIngredientModal({
                         <option value="">Elegir uno...</option>
                         {inventory.map(item => (
                             <option key={item.id} value={item.id}>
-                                {item.producto}
+                                {item.producto} ({item.unidad_medida})
                             </option>
                         ))}
                     </select>

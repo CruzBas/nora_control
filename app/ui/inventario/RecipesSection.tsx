@@ -129,8 +129,8 @@ export default function RecipesSection() {
                                     onClick={handleSaveRecipe}
                                     disabled={savedRecipe}
                                     className={`px-6 py-2 rounded-xl font-bold transition-all shadow-lg active:scale-95 flex items-center gap-2 ${savedRecipe
-                                            ? 'bg-nora-success text-white shadow-nora-success/20 cursor-default'
-                                            : 'bg-nora-accent-500 hover:bg-nora-accent-400 text-white shadow-nora-accent-500/20'
+                                        ? 'bg-nora-success text-white shadow-nora-success/20 cursor-default'
+                                        : 'bg-nora-accent-500 hover:bg-nora-accent-400 text-white shadow-nora-accent-500/20'
                                         }`}
                                 >
                                     <span className="material-symbols-outlined text-sm">
@@ -150,7 +150,7 @@ export default function RecipesSection() {
                                         <option value="">Seleccionar ingrediente...</option>
                                         {inventory.map(item => (
                                             <option key={item.id} value={item.id}>
-                                                {item.producto}
+                                                {item.producto} ({item.unidad_medida})
                                             </option>
                                         ))}
                                     </select>
@@ -200,7 +200,7 @@ export default function RecipesSection() {
                                                             {item.inventario?.producto || 'Desconocido'}
                                                         </td>
                                                         <td className="px-6 py-4 text-center text-nora-accent-400 font-bold">
-                                                            {item.cantidad}
+                                                            {item.cantidad} {item.inventario?.unidad_medida}
                                                         </td>
                                                         <td className="px-6 py-4 text-right">
                                                             <button
