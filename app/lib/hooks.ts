@@ -4,6 +4,7 @@ export interface OrderItem {
     name: string;
     quantity: number;
     notes?: string;
+    receta_id?: string; // ID de la receta para descontar inventario automáticamente
 }
 
 export interface Order {
@@ -47,7 +48,7 @@ export function useOrders() {
     const [error, setError] = useState<string | null>(null);
 
     const fetchOrders = async () => {
-
+        // TODO: Conectar con órdenes reales de Supabase
     };
 
     useEffect(() => {
@@ -55,6 +56,25 @@ export function useOrders() {
     }, []);
 
     const markAsCompleted = async (id: string) => {
+        // Buscar la orden para obtener sus ítems con receta_id
+        const order = orders.find(o => o.id === id);
+
+        // Descontar inventario si los ítems tienen receta_id
+        if (order) {
+            const itemsWithReceta = order.items
+                .filter(item => item.receta_id)
+                .map(item => ({ receta_id: item.receta_id!, quantity: item.quantity }));
+
+            if (itemsWithReceta.length > 0) {
+                try {
+                    await completeOrderAndDeductInventoryAction(itemsWithReceta);
+                } catch (err) {
+                    console.error('Error al descontar inventario:', err);
+                }
+            }
+        }
+
+        // Quitar la orden de la lista local
         setOrders(prev => prev.filter(order => order.id !== id));
     };
 
@@ -124,7 +144,8 @@ export function useInventory() {
 }
 //Recetas
 
-import { getRecetasAction, getRecetaIngredientsAction } from '@/lib/actions/receta.actions';
+import { getRecetasAction, getRecetaIngredientsAction, getRecetasForPOSAction } from '@/lib/actions/receta.actions';
+import { completeOrderAndDeductInventoryAction } from '@/lib/actions/orden.actions';
 import { Receta, RecetaProducto, Inventario } from '@/lib/types';
 
 export function useRecipes() {
@@ -191,4 +212,34 @@ export function useRecipes() {
         refresh: fetchRecipes,
         fetchRecipeIngredients
     };
+}
+
+// POS — productos disponibles para vender (recetas con al menos 1 ingrediente)
+export function usePOSProducts() {
+    const [products, setProducts] = useState<Receta[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchProducts = async () => {
+        setLoading(true);
+        try {
+            const response = await getRecetasForPOSAction();
+            if (response.success && response.data) {
+                setProducts(response.data);
+                setError(null);
+            } else {
+                setError(response.error ?? 'Error al cargar productos');
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Error inesperado');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    return { products, loading, error, refresh: fetchProducts };
 }

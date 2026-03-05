@@ -16,6 +16,16 @@ export default function RecipesSection() {
 
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [addingIngredient, setAddingIngredient] = useState(false);
+    const [savedRecipe, setSavedRecipe] = useState(false);
+
+    const handleSaveRecipe = async () => {
+        if (!selectedProductId) return;
+        setSavedRecipe(true);
+        // La receta ya está guardada en Supabase en tiempo real (ingrediente a ingrediente).
+        // Este botón recarga los ingredientes y da confirmación visual al usuario.
+        await fetchRecipeIngredients(selectedProductId);
+        setTimeout(() => setSavedRecipe(false), 2500);
+    };
 
     useEffect(() => {
         if (selectedProductId) {
@@ -28,7 +38,8 @@ export default function RecipesSection() {
         if (!selectedProductId) return;
 
         setAddingIngredient(true);
-        const formData = new FormData(e.currentTarget);
+        const form = e.currentTarget;
+        const formData = new FormData(form);
         const data = {
             receta_id: selectedProductId,
             inventario_id: formData.get('inventario_id') as string,
@@ -39,7 +50,7 @@ export default function RecipesSection() {
             const res = await addIngredientToRecetaAction(data);
             if (res.success) {
                 await fetchRecipeIngredients(selectedProductId);
-                e.currentTarget.reset();
+                form.reset();
             } else {
                 alert(res.error);
             }
@@ -114,8 +125,18 @@ export default function RecipesSection() {
                                 <h4 className="text-xl font-black text-nora-gray-100">
                                     {recipes.find(p => p.id === selectedProductId)?.nombre}
                                 </h4>
-                                <button className="bg-nora-accent-500 hover:bg-nora-accent-400 text-white px-6 py-2 rounded-xl font-bold transition-all shadow-lg shadow-nora-accent-500/20 active:scale-95">
-                                    Guardar Receta
+                                <button
+                                    onClick={handleSaveRecipe}
+                                    disabled={savedRecipe}
+                                    className={`px-6 py-2 rounded-xl font-bold transition-all shadow-lg active:scale-95 flex items-center gap-2 ${savedRecipe
+                                            ? 'bg-nora-success text-white shadow-nora-success/20 cursor-default'
+                                            : 'bg-nora-accent-500 hover:bg-nora-accent-400 text-white shadow-nora-accent-500/20'
+                                        }`}
+                                >
+                                    <span className="material-symbols-outlined text-sm">
+                                        {savedRecipe ? 'check_circle' : 'save'}
+                                    </span>
+                                    {savedRecipe ? 'Guardado' : 'Guardar Receta'}
                                 </button>
                             </div>
 

@@ -7,10 +7,16 @@ import { useOrders, Order } from '@/app/lib/hooks';
 export default function DashboardCocina() {
     const { orders, loading, error, markAsCompleted } = useOrders();
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [completing, setCompleting] = useState(false);
 
-    const handleMarkAsCompleted = (id: string) => {
-        markAsCompleted(id);
-        setSelectedOrder(null);
+    const handleMarkAsCompleted = async (id: string) => {
+        setCompleting(true);
+        try {
+            await markAsCompleted(id);
+        } finally {
+            setCompleting(false);
+            setSelectedOrder(null);
+        }
     };
 
     if (loading) {
@@ -139,10 +145,20 @@ export default function DashboardCocina() {
                             </button>
                             <button
                                 onClick={() => handleMarkAsCompleted(selectedOrder.id)}
-                                className="flex-[2] py-4 px-6 rounded-2xl bg-nora-success text-white font-black hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-nora-success/20 flex items-center justify-center gap-2"
+                                disabled={completing}
+                                className="flex-[2] py-4 px-6 rounded-2xl bg-nora-success text-white font-black hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-nora-success/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                <span className="material-symbols-outlined">check_circle</span>
-                                MARCAR COMPLETADA
+                                {completing ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white" />
+                                        PROCESANDO...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined">check_circle</span>
+                                        MARCAR COMPLETADA
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

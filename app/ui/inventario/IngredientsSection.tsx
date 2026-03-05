@@ -1,9 +1,21 @@
+'use client';
+
 import { useState } from 'react';
 import { useInventory } from '@/app/lib/hooks';
 import AddIngredientModal from './AddIngredientModal';
+import EditIngredientModal from './EditIngredientModal';
 
 interface AgregarProps {
     showAgregar?: boolean;
+}
+
+// Tipo local que usa el hook useInventory
+interface Ingredient {
+    id: string;
+    name: string;
+    cantidad: number;
+    minimo: number;
+    costo: number;
 }
 
 export default function IngredientsSection({
@@ -11,6 +23,7 @@ export default function IngredientsSection({
 }: AgregarProps) {
     const { ingredients, loading, error, deleteIngredient, refresh } = useInventory();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
 
     if (loading) {
         return (
@@ -51,6 +64,13 @@ export default function IngredientsSection({
                 onSuccess={refresh}
             />
 
+            <EditIngredientModal
+                isOpen={editingIngredient !== null}
+                ingredient={editingIngredient}
+                onClose={() => setEditingIngredient(null)}
+                onSuccess={() => { refresh(); setEditingIngredient(null); }}
+            />
+
             <div className="bg-nora-blue-800/40 rounded-3xl border border-nora-blue-700/30 overflow-hidden shadow-sm backdrop-blur-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
@@ -64,40 +84,53 @@ export default function IngredientsSection({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-nora-blue-700/30">
-                            {ingredients.map((item) => (
-                                <tr key={item.id} className="hover:bg-nora-blue-700/20 transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <span className="text-sm font-bold text-nora-gray-100 whitespace-nowrap">{item.name}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={`text-sm font-bold px-3 py-1 rounded-full whitespace-nowrap ${item.cantidad <= item.minimo
-                                            ? 'bg-nora-danger/20 text-nora-danger'
-                                            : 'bg-nora-success/20 text-nora-success'
-                                            }`}>
-                                            {item.cantidad}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className="text-sm text-nora-gray-400 whitespace-nowrap">{item.minimo}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className="text-sm font-bold text-nora-accent-400 whitespace-nowrap">¢{item.costo.toLocaleString()}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors">
-                                                <span className="material-symbols-outlined text-sm">edit</span>
-                                            </button>
-                                            <button
-                                                onClick={() => deleteIngredient(item.id)}
-                                                className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
-                                            >
-                                                <span className="material-symbols-outlined text-sm">delete</span>
-                                            </button>
-                                        </div>
+                            {ingredients.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-10 text-center text-nora-gray-500 italic">
+                                        No hay ingredientes registrados.
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                ingredients.map((item) => (
+                                    <tr key={item.id} className="hover:bg-nora-blue-700/20 transition-colors group">
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm font-bold text-nora-gray-100 whitespace-nowrap">{item.name}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={`text-sm font-bold px-3 py-1 rounded-full whitespace-nowrap ${item.cantidad <= item.minimo
+                                                ? 'bg-nora-danger/20 text-nora-danger'
+                                                : 'bg-nora-success/20 text-nora-success'
+                                                }`}>
+                                                {item.cantidad}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="text-sm text-nora-gray-400 whitespace-nowrap">{item.minimo}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="text-sm font-bold text-nora-accent-400 whitespace-nowrap">¢{item.costo.toLocaleString()}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => setEditingIngredient(item)}
+                                                    className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors"
+                                                    title="Editar ingrediente"
+                                                >
+                                                    <span className="material-symbols-outlined text-sm">edit</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => deleteIngredient(item.id)}
+                                                    className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
+                                                    title="Eliminar ingrediente"
+                                                >
+                                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>

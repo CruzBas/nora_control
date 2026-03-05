@@ -71,6 +71,36 @@ export class RecetaService extends BaseService {
         }
     }
 
+    async update(id: string, receta: Partial<Omit<Receta, 'id' | 'created_at' | 'empresa_id'>>): Promise<ApiResponse<Receta>> {
+        try {
+            const supabase = await this.getSupabase();
+            const { data, error } = await supabase
+                .from(this.recetaTable)
+                .update(receta)
+                .eq('id', id)
+                .select()
+                .single();
+
+            return this.handleResponse<Receta>(data, error);
+        } catch (error) {
+            return this.handleError<Receta>(error);
+        }
+    }
+
+    async delete(id: string): Promise<ApiResponse<null>> {
+        try {
+            const supabase = await this.getSupabase();
+            const { error } = await supabase
+                .from(this.recetaTable)
+                .delete()
+                .eq('id', id);
+
+            return this.handleResponse<null>(null, error);
+        } catch (error) {
+            return this.handleError<null>(error);
+        }
+    }
+
     async addIngredient(ingredient: Omit<RecetaProducto, 'id' | 'created_at'>): Promise<ApiResponse<RecetaProducto>> {
         try {
             const supabase = await this.getSupabase();
@@ -97,6 +127,32 @@ export class RecetaService extends BaseService {
             return this.handleResponse<null>(null, error);
         } catch (error) {
             return this.handleError<null>(error);
+        }
+    }
+
+    /**
+     * Devuelve solo las recetas que tienen al menos un ingrediente configurado.
+     * Se usa en el POS para mostrar únicamente los productos listos para vender.
+     */
+    async getAllForPOS(): Promise<ApiResponse<Receta[]>> {
+        try {
+            const supabase = await this.getSupabase();
+
+            // Inner join: solo recetas que aparecen en receta_producto
+            const { data, error } = await supabase
+                .from(this.recetaTable)
+                .select(`
+                    *,
+                    receta_producto!inner(id)
+                `)
+                .order('nombre', { ascending: true });
+
+            // Eliminar el campo receta_producto anidado innecesario del resultado
+            const clean = data?.map(({ receta_producto: _, ...rest }) => rest) ?? null;
+
+            return this.handleResponse<Receta[]>(clean as Receta[], error);
+        } catch (error) {
+            return this.handleError<Receta[]>(error);
         }
     }
 }

@@ -22,6 +22,29 @@ export async function createRecetaAction(
     return response;
 }
 
+export async function updateRecetaAction(
+    id: string,
+    receta: Partial<Omit<Receta, 'id' | 'created_at' | 'empresa_id'>>
+): Promise<ApiResponse<Receta>> {
+    const response = await recetaService.update(id, receta);
+    if (response.success) {
+        revalidatePath('/dashboardAdmin/inventario');
+        revalidatePath('/dashboardCajero/ventas');
+        revalidatePath('/dashboardAdmin/ventas');
+    }
+    return response;
+}
+
+export async function deleteRecetaAction(id: string): Promise<ApiResponse<null>> {
+    const response = await recetaService.delete(id);
+    if (response.success) {
+        revalidatePath('/dashboardAdmin/inventario');
+        revalidatePath('/dashboardCajero/ventas');
+        revalidatePath('/dashboardAdmin/ventas');
+    }
+    return response;
+}
+
 export async function addIngredientToRecetaAction(
     ingredient: Omit<RecetaProducto, 'id' | 'created_at'>
 ): Promise<ApiResponse<RecetaProducto>> {
@@ -38,4 +61,12 @@ export async function removeIngredientFromRecetaAction(id: string): Promise<ApiR
         revalidatePath('/dashboardAdmin/inventario');
     }
     return response;
+}
+
+/**
+ * Trae solo las recetas que tienen al menos un ingrediente vinculado.
+ * Estas son las que están listas para mostrarse en el POS.
+ */
+export async function getRecetasForPOSAction(): Promise<ApiResponse<Receta[]>> {
+    return await recetaService.getAllForPOS();
 }

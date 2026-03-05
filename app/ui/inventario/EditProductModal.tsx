@@ -1,55 +1,67 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
-import { createRecetaAction } from '@/lib/actions/receta.actions';
+import { updateRecetaAction } from '@/lib/actions/receta.actions';
+import { Receta } from '@/lib/types';
 
-interface AddProductModalProps {
+interface EditProductModalProps {
     isOpen: boolean;
+    product: Receta | null;
     onClose: () => void;
     onSuccess: () => void;
 }
 
 const CATEGORIAS = ['comidas', 'bebidas', 'postres', 'snacks', 'desayunos', 'almuerzos', 'cenas', 'otros'];
-
 const FIELD_CLASS = 'w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-white focus:ring-2 focus:ring-nora-accent-500 outline-none';
 const LABEL_CLASS = 'block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2';
 
-export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalProps) {
+export default function EditProductModal({ isOpen, product, onClose, onSuccess }: EditProductModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [nombre, setNombre] = useState('');
+    const [precio, setPrecio] = useState('0');
+    const [categoria, setCategoria] = useState('otros');
+
+    useEffect(() => {
+        if (product) {
+            setNombre(product.nombre);
+            setPrecio(String(product.precio));
+            setCategoria(product.categoria);
+            setError(null);
+        }
+    }, [product]);
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (!product) return;
+
         setLoading(true);
         setError(null);
 
-        const form = e.currentTarget;
-        const formData = new FormData(form);
-        const data = {
-            nombre: formData.get('nombre') as string,
-            precio: Number(formData.get('precio')),
-            categoria: formData.get('categoria') as string,
-        };
-
         try {
-            const response = await createRecetaAction(data);
+            const response = await updateRecetaAction(product.id, {
+                nombre,
+                precio: Number(precio),
+                categoria,
+            });
+
             if (response.success) {
-                form.reset();
                 onSuccess();
                 onClose();
             } else {
                 setError(response.error);
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Error al guardar');
+            setError(err instanceof Error ? err.message : 'Error al actualizar');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Agregar Nuevo Producto al Menú">
+        <Modal isOpen={isOpen} onClose={onClose} title="Editar Producto del Menú">
             <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
                     <div className="p-3 bg-nora-danger/10 border border-nora-danger/20 rounded-xl text-nora-danger text-sm font-bold">
@@ -57,28 +69,26 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                     </div>
                 )}
 
-                {/* Nombre */}
                 <div>
                     <label className={LABEL_CLASS}>Nombre del Producto</label>
                     <input
                         required
-                        name="nombre"
-                        placeholder="Ej. Café Americano"
+                        value={nombre}
+                        onChange={e => setNombre(e.target.value)}
                         className={FIELD_CLASS}
                     />
                 </div>
 
-                {/* Precio y Categoría en fila */}
                 <div className="grid grid-cols-2 gap-3">
                     <div>
                         <label className={LABEL_CLASS}>Precio (₡)</label>
                         <input
                             required
-                            name="precio"
                             type="number"
                             min="0"
                             step="50"
-                            placeholder="Ej. 2500"
+                            value={precio}
+                            onChange={e => setPrecio(e.target.value)}
                             className={FIELD_CLASS}
                         />
                     </div>
@@ -86,11 +96,10 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                         <label className={LABEL_CLASS}>Categoría</label>
                         <select
                             required
-                            name="categoria"
+                            value={categoria}
+                            onChange={e => setCategoria(e.target.value)}
                             className={`${FIELD_CLASS} appearance-none`}
-                            defaultValue=""
                         >
-                            <option value="" disabled>Seleccionar...</option>
                             {CATEGORIAS.map(cat => (
                                 <option key={cat} value={cat}>
                                     {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -99,10 +108,6 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                         </select>
                     </div>
                 </div>
-
-                <p className="text-xs text-nora-gray-500 pt-1">
-                    💡 Después de crear el producto, ve a <strong className="text-nora-gray-400">Recetas</strong> para vincular sus ingredientes.
-                </p>
 
                 <div className="flex gap-3 pt-2">
                     <button
@@ -117,7 +122,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                         disabled={loading}
                         className="flex-[2] px-6 py-4 bg-nora-accent-500 text-white rounded-2xl font-black shadow-lg shadow-nora-accent-500/20 hover:bg-nora-accent-400 transition-all disabled:opacity-50"
                     >
-                        {loading ? 'Guardando...' : 'Crear Producto'}
+                        {loading ? 'Guardando...' : 'Guardar Cambios'}
                     </button>
                 </div>
             </form>

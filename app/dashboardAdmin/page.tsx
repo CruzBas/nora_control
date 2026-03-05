@@ -15,7 +15,7 @@ export default function DashboardAdminPage() {
 
     const totalSalesToday = orders.reduce((acc, order) => acc + order.total, 0);
     const activeOrdersCount = orders.length;
-    const stockAlertsCount = ingredients.filter(i => i.stock <= i.min).length;
+    const stockAlertsCount = ingredients.filter(i => i.cantidad <= i.minimo).length;
 
     if (ordersLoading || inventoryLoading) {
         return (

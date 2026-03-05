@@ -1,10 +1,26 @@
+'use client';
+
 import { useState } from 'react';
 import { useRecipes } from '@/app/lib/hooks';
+import { deleteRecetaAction } from '@/lib/actions/receta.actions';
+import { Receta } from '@/lib/types';
 import AddProductModal from './AddProductModal';
+import EditProductModal from './EditProductModal';
 
 export default function ProductsSection() {
     const { recipes: products, loading, error, refresh } = useRecipes();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<Receta | null>(null);
+
+    const handleDelete = async (product: Receta) => {
+        if (!confirm(`¿Eliminar el producto "${product.nombre}"? Esto también eliminará su receta.`)) return;
+        const res = await deleteRecetaAction(product.id);
+        if (res.success) {
+            await refresh();
+        } else {
+            alert(`Error al eliminar: ${res.error}`);
+        }
+    };
 
     if (loading) {
         return (
@@ -36,19 +52,27 @@ export default function ProductsSection() {
                 onSuccess={refresh}
             />
 
+            <EditProductModal
+                isOpen={editingProduct !== null}
+                product={editingProduct}
+                onClose={() => setEditingProduct(null)}
+                onSuccess={() => { refresh(); setEditingProduct(null); }}
+            />
+
             <div className="bg-nora-blue-800/40 rounded-3xl border border-nora-blue-700/30 overflow-hidden shadow-sm backdrop-blur-sm">
                 <table className="w-full text-left">
                     <thead className="bg-nora-blue-900/50 border-b border-nora-blue-700/50">
                         <tr>
                             <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest">Producto</th>
-                            <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest">Estado</th>
+                            <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-center">Categoría</th>
+                            <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-center">Precio</th>
                             <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-nora-blue-700/30">
                         {products.length === 0 ? (
                             <tr>
-                                <td colSpan={3} className="px-6 py-10 text-center text-nora-gray-500 italic">
+                                <td colSpan={4} className="px-6 py-10 text-center text-nora-gray-500 italic">
                                     No hay productos registrados.
                                 </td>
                             </tr>
@@ -58,17 +82,30 @@ export default function ProductsSection() {
                                     <td className="px-6 py-4">
                                         <span className="text-sm font-bold text-nora-gray-100">{product.nombre}</span>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-xs font-medium text-nora-success bg-nora-success/10 px-2 py-1 rounded-md">
-                                            Activo
+                                    <td className="px-6 py-4 text-center">
+                                        <span className="text-xs font-medium bg-nora-blue-700/50 text-nora-gray-300 px-3 py-1 rounded-full capitalize">
+                                            {product.categoria}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className="text-sm font-bold text-nora-accent-400">
+                                            ₡{product.precio.toLocaleString('es-CR')}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors">
+                                            <button
+                                                onClick={() => setEditingProduct(product)}
+                                                className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors"
+                                                title="Editar producto"
+                                            >
                                                 <span className="material-symbols-outlined text-sm">edit</span>
                                             </button>
-                                            <button className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors">
+                                            <button
+                                                onClick={() => handleDelete(product)}
+                                                className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
+                                                title="Eliminar producto"
+                                            >
                                                 <span className="material-symbols-outlined text-sm">delete</span>
                                             </button>
                                         </div>
