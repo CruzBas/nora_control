@@ -23,7 +23,7 @@ export default function DashboardAdminPage() {
 
     const fmt = (n: number) => `₡${n.toLocaleString('es-CR', { minimumFractionDigits: 0 })}`;
 
-    // Variación vs ayer
+
     const variacion = stats
         ? stats.ventasAyer > 0
             ? (((stats.ventasHoy - stats.ventasAyer) / stats.ventasAyer) * 100).toFixed(1)

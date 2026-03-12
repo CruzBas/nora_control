@@ -205,7 +205,7 @@ export default function Home() {
         {/* Redes o Aux de login */}
         <div className="mt-6 flex justify-center gap-4 relative z-10">
           <p className="text-[10px] text-nora-gray-500 font-bold uppercase tracking-tighter">
-            Utilice sus credenciales de Supabase
+            Utilice sus credenciales seleccionadas al registrarse
           </p>
         </div>
 
