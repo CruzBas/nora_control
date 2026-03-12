@@ -28,11 +28,11 @@ const links = [
 ];
 
 const bottomLinks = [
-    {
+    /*{
         name: 'Ajustes',
         href: '/dashboardAdmin/ajustes',
         icon: 'settings',
-    }, {
+    },*/ {
         name: 'Cerrar Sesión',
         href: '/',
         icon: 'logout',
