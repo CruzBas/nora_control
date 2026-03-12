@@ -27,7 +27,7 @@ export class RecetaService extends BaseService {
                 .from(this.recetaTable)
                 .select('*')
                 .eq('id', id)
-                .single();
+                .maybeSingle();
 
             return this.handleResponse<Receta>(data, error);
         } catch (error) {
@@ -63,7 +63,7 @@ export class RecetaService extends BaseService {
                     empresa_id: empresaId
                 })
                 .select()
-                .single();
+                .maybeSingle();
 
             return this.handleResponse<Receta>(data, error);
         } catch (error) {
@@ -79,7 +79,7 @@ export class RecetaService extends BaseService {
                 .update(receta)
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
 
             return this.handleResponse<Receta>(data, error);
         } catch (error) {
@@ -108,7 +108,7 @@ export class RecetaService extends BaseService {
                 .from(this.recetaProductoTable)
                 .insert(ingredient)
                 .select()
-                .single();
+                .maybeSingle();
 
             return this.handleResponse<RecetaProducto>(data, error);
         } catch (error) {

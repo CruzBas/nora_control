@@ -26,7 +26,7 @@ export class InventarioService extends BaseService {
                 .from(this.table)
                 .select('*')
                 .eq('id', id)
-                .single();
+                .maybeSingle();
 
             return this.handleResponse<Inventario>(data, error);
         } catch (error) {
@@ -46,7 +46,7 @@ export class InventarioService extends BaseService {
                     empresa_id: empresaId
                 })
                 .select()
-                .single();
+                .maybeSingle();
 
             return this.handleResponse<Inventario>(data, error);
         } catch (error) {
@@ -62,7 +62,7 @@ export class InventarioService extends BaseService {
                 .update(item)
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
 
             return this.handleResponse<Inventario>(data, error);
         } catch (error) {

@@ -31,10 +31,12 @@ export default function Home() {
           .from('usuario')
           .select('*, rol(nombre)')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
 
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
+        if (profileError || !profile) {
+          console.error('Error fetching profile:', profileError || 'Profile not found');
+          console.log('User ID from session:', session.user.id);
+          console.log('User Email from session:', session.user.email);
 
           if (email.includes('admin')) router.push('/dashboardAdmin');
           else if (email.includes('cajero')) router.push('/dashboardCajero');

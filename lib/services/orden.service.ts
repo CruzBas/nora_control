@@ -22,6 +22,26 @@ export class OrdenService extends BaseService {
         }
     }
 
+
+    async getTerminadasHoy(): Promise<ApiResponse<Orden[]>> {
+        try {
+            const supabase = await this.getSupabase();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const { data, error } = await supabase
+                .from(this.ordenTable)
+                .select(`*, items:orden_item(*)`)
+                .in('estado', ['lista', 'pagada'])
+                .gte('created_at', today.toISOString())
+                .order('created_at', { ascending: false });
+
+            return this.handleResponse<Orden[]>(data as Orden[], error);
+        } catch (error) {
+            return this.handleError<Orden[]>(error);
+        }
+    }
+
     /** Crea una orden junto con todos sus ítems (transacción lógica) */
     async create(
         clienteNombre: string,
@@ -55,7 +75,9 @@ export class OrdenService extends BaseService {
                     estado: 'pendiente',
                 })
                 .select()
-                .single();
+                .maybeSingle();
+
+            if (ordenError) console.error('create error in orden:', ordenError);
 
             if (ordenError || !orden) return this.handleResponse<Orden>(null, ordenError);
 
@@ -79,7 +101,9 @@ export class OrdenService extends BaseService {
                 .update({ estado })
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
+
+            if (error) console.error('updateEstado error in orden:', error);
 
             return this.handleResponse<Orden>(data as Orden, error);
         } catch (error) {
@@ -166,7 +190,9 @@ export class OrdenService extends BaseService {
                 .update({ estado: 'pagada', metodo_pago: metodoPago })
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
+
+            if (error) console.error('pagar error in orden:', error);
 
             return this.handleResponse<Orden>(data as Orden, error);
         } catch (error) {
@@ -223,7 +249,9 @@ export class OrdenService extends BaseService {
                 .from(this.cierreTable)
                 .insert({ ...data, empresa_id: empresaId })
                 .select()
-                .single();
+                .maybeSingle();
+
+            if (error) console.error('saveCierre error in orden:', error);
 
             return this.handleResponse<CierreCaja>(cierre as CierreCaja, error);
         } catch (error) {

@@ -13,10 +13,16 @@ export default function DashboardAdminPage() {
     const [statsLoading, setStatsLoading] = useState(true);
 
     useEffect(() => {
-        getDashboardStatsAction().then(res => {
-            if (res.success && res.data) setStats(res.data);
-            setStatsLoading(false);
-        });
+        const fetchStats = () => {
+            getDashboardStatsAction().then(res => {
+                if (res.success && res.data) setStats(res.data);
+                setStatsLoading(false);
+            });
+        };
+
+        fetchStats();
+        const interval = setInterval(fetchStats, 30000); // 30s
+        return () => clearInterval(interval);
     }, []);
 
     const stockAlertsCount = ingredients.filter(i => i.cantidad <= i.minimo).length;

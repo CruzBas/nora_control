@@ -200,7 +200,7 @@ export default function RecipesSection() {
                                                             {item.inventario?.producto || 'Desconocido'}
                                                         </td>
                                                         <td className="px-6 py-4 text-center text-nora-accent-400 font-bold">
-                                                            {item.cantidad} {item.inventario?.unidad_medida}
+                                                            {item.cantidad.toLocaleString('es-CR', { maximumFractionDigits: 3 })} {item.inventario?.unidad_medida}
                                                         </td>
                                                         <td className="px-6 py-4 text-right">
                                                             <button

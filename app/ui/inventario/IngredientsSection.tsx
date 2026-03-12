@@ -102,11 +102,11 @@ export default function IngredientsSection({
                                                 ? 'bg-nora-danger/20 text-nora-danger'
                                                 : 'bg-nora-success/20 text-nora-success'
                                                 }`}>
-                                                {item.cantidad} {item.unidad_medida}
+                                                {item.cantidad.toLocaleString('es-CR', { maximumFractionDigits: 3 })} {item.unidad_medida}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="text-sm text-nora-gray-400 whitespace-nowrap">{item.minimo} {item.unidad_medida}</span>
+                                            <span className="text-sm text-nora-gray-400 whitespace-nowrap">{item.minimo.toLocaleString('es-CR', { maximumFractionDigits: 3 })} {item.unidad_medida}</span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="text-sm font-bold text-nora-accent-400 whitespace-nowrap">¢{item.costo.toLocaleString()}</span>

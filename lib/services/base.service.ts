@@ -19,10 +19,11 @@ export abstract class BaseService {
             .from('usuario')
             .select('empresa_id')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
 
         if (error || !profile) {
-            throw new Error('No se pudo encontrar el perfil de usuario o la empresa asociada.');
+            console.error('getEmpresaId error:', error || 'Profile not found');
+            throw new Error(`No se pudo encontrar el perfil de usuario o la empresa asociada para el usuario ${user.id}.`);
         }
 
         return profile.empresa_id;

@@ -46,7 +46,9 @@ export async function completeOrderAndDeductInventoryAction(
                         .from('inventario')
                         .select('cantidad')
                         .eq('id', ingrediente.inventario_id)
-                        .single();
+                    .maybeSingle();
+
+                if (!current) console.log('No se pudo encontrar el item de inventario para deducir stock:', ingrediente.inventario_id);
 
                     if (current) {
                         const nuevaCantidad = Math.max(0, current.cantidad - cantidadADescontar);

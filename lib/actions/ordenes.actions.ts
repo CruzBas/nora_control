@@ -10,6 +10,11 @@ export async function getOrdenesActivasAction(): Promise<ApiResponse<Orden[]>> {
     return ordenService.getActivas();
 }
 
+/** Órdenes terminadas hoy */
+export async function getOrdenesTerminadasHoyAction(): Promise<ApiResponse<Orden[]>> {
+    return ordenService.getTerminadasHoy();
+}
+
 /** Stats para el dashboard admin */
 export async function getDashboardStatsAction() {
     return ordenService.getDashboardStats();
