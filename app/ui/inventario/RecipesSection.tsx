@@ -21,8 +21,6 @@ export default function RecipesSection() {
     const handleSaveRecipe = async () => {
         if (!selectedProductId) return;
         setSavedRecipe(true);
-        // La receta ya está guardada en Supabase en tiempo real (ingrediente a ingrediente).
-        // Este botón recarga los ingredientes y da confirmación visual al usuario.
         await fetchRecipeIngredients(selectedProductId);
         setTimeout(() => setSavedRecipe(false), 2500);
     };
