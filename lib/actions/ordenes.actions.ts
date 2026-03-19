@@ -79,7 +79,7 @@ export async function getCierreCajaAction() {
 
 /** Guarda el registro del cierre de caja */
 export async function saveCierreCajaAction(
-    data: Omit<CierreCaja, 'id' | 'created_at' | 'empresa_id'>
+    data: Omit<CierreCaja, 'id' | 'created_at' | 'empresa_id' | 'usuario_id'>
 ): Promise<ApiResponse<CierreCaja>> {
     return ordenService.saveCierre(data);
 }
@@ -87,4 +87,9 @@ export async function saveCierreCajaAction(
 /** Obtiene el reporte de ventas por rango de fechas */
 export async function getReporteAction(fechaInicio: string, fechaFin: string) {
     return ordenService.getReporteData(fechaInicio, fechaFin);
+}
+
+/** Obtiene todos los cierres de caja con su usuario */
+export async function getCierresCajaAction() {
+    return ordenService.getCierresCaja();
 }

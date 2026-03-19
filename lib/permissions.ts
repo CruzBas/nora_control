@@ -11,7 +11,8 @@ export type Pagina =
     | 'inventario'
     | 'reportes'
     | 'admin'
-    | 'solicitudes';
+    | 'solicitudes'
+    | 'cierres';
 
 export type RolNombre = 'Master' | 'Admin' | 'Cajero' | 'Cocina';
 
@@ -26,6 +27,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         reportes: true,
         admin: true,
         solicitudes: true,
+        cierres: true,
     },
     Admin: {
         home: true,
@@ -36,6 +38,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         reportes: true,
         admin: true,
         solicitudes: true,
+        cierres: true,
     },
     Cajero: {
         home: undefined,
@@ -46,6 +49,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         reportes: false,
         admin: false,
         solicitudes: undefined,
+        cierres: false,
     },
     Cocina: {
         home: undefined,
@@ -56,6 +60,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         reportes: false,
         admin: false,
         solicitudes: undefined,
+        cierres: false,
     },
 };
 
@@ -69,6 +74,7 @@ export const RUTA_A_PAGINA: Record<string, Pagina> = {
     '/dashboardMaster/reportes': 'reportes',
     '/dashboardMaster/admin': 'admin',
     '/dashboardMaster/solicitudes': 'solicitudes',
+    '/dashboardMaster/cierres': 'cierres',
 };
 
 

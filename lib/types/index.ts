@@ -64,6 +64,7 @@ export interface Orden extends BaseEntity {
 
 export interface CierreCaja extends BaseEntity {
     empresa_id: string;
+    usuario_id?: string;
     fecha: string;
     total_efectivo: number;
     total_tarjeta: number;
@@ -71,4 +72,9 @@ export interface CierreCaja extends BaseEntity {
     total_otro: number;
     total_general: number;
     ordenes_count: number;
+    usuario?: {
+        nombre: string;
+        apellido: string;
+        rol?: { nombre: string } | null;
+    } | null;
 }

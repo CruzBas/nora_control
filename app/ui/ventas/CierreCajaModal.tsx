@@ -62,6 +62,53 @@ export default function CierreCajaModal({ isOpen, onClose }: CierreCajaModalProp
 
     const fmt = (n: number) => `₡${n.toLocaleString('es-CR', { minimumFractionDigits: 2 })}`;
 
+    const imprimir = () => {
+        if (!data) return;
+        const windowPrint = window.open('', '', 'width=800,height=600');
+        if (windowPrint) {
+            windowPrint.document.write(`
+                <html>
+                <head>
+                <title>Cierre de Caja - Hoy</title>
+                <style>
+                    body { font-family: 'Courier New', Courier, monospace; padding: 20px; font-size: 14px; color: #000; }
+                    .ticket { max-width: 350px; margin: 0 auto; border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
+                    h2, h3, h4 { text-align: center; margin: 5px 0; }
+                    .row { display: flex; justify-content: space-between; margin: 8px 0; }
+                    .divider { border-top: 1px dashed #000; margin: 15px 0; }
+                    .bold { font-weight: bold; }
+                    .text-center { text-align: center; }
+                </style>
+                </head>
+                <body>
+                  <div class="ticket">
+                     <h2>NORA</h2>
+                     <h3>Cierre de Caja</h3>
+                     <div class="divider"></div>
+                     <div class="row"><span>Fecha:</span><span>${new Date().toLocaleString('es-CR')}</span></div>
+                     <div class="row"><span>Órdenes Generadas:</span><span>${data.ordenes_count}</span></div>
+                     <div class="divider"></div>
+                     <div class="row"><span>Efectivo:</span><span>${fmt(data.total_efectivo)}</span></div>
+                     <div class="row"><span>Tarjeta:</span><span>${fmt(data.total_tarjeta)}</span></div>
+                     <div class="row"><span>SINPE:</span><span>${fmt(data.total_sinpe)}</span></div>
+                     <div class="row"><span>Otro:</span><span>${fmt(data.total_otro)}</span></div>
+                     <div class="divider"></div>
+                     <div class="row bold" style="font-size: 18px;"><span>TOTAL:</span><span>${fmt(data.total_general)}</span></div>
+                     <div class="divider"></div>
+                     <div class="text-center" style="font-size: 12px; margin-top:20px;">
+                        Reporte generado automáticamente.
+                     </div>
+                  </div>
+                  <script>
+                    window.onload = () => { window.print(); window.close(); }
+                  </script>
+                </body>
+                </html>
+            `);
+            windowPrint.document.close();
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-nora-blue-900/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
             <div className="bg-nora-blue-800 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-nora-blue-700 overflow-hidden animate-in zoom-in duration-300">
@@ -147,13 +194,21 @@ export default function CierreCajaModal({ isOpen, onClose }: CierreCajaModalProp
                             Calcular Cierre
                         </button>
                     ) : (
-                        <button
-                            onClick={guardarCierre}
-                            disabled={saving || saved}
-                            className="flex-[2] py-4 bg-nora-success text-white font-black rounded-2xl hover:brightness-110 transition-all disabled:opacity-50 uppercase tracking-widest text-sm"
-                        >
-                            {saving ? 'Guardando...' : saved ? '✅ Guardado' : 'Guardar y Cerrar'}
-                        </button>
+                        <>
+                            <button
+                                onClick={imprimir}
+                                className="flex-1 py-4 bg-nora-blue-700 text-white font-black rounded-2xl hover:bg-nora-blue-600 transition-all uppercase tracking-widest text-sm"
+                            >
+                                Imprimir
+                            </button>
+                            <button
+                                onClick={guardarCierre}
+                                disabled={saving || saved}
+                                className="flex-[2] py-4 bg-nora-success text-white font-black rounded-2xl hover:brightness-110 transition-all disabled:opacity-50 uppercase tracking-widest text-sm"
+                            >
+                                {saving ? 'Guardando...' : saved ? '✅ Guardado' : 'Guardar'}
+                            </button>
+                        </>
                     )}
                 </div>
             </div>

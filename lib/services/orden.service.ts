@@ -281,13 +281,43 @@ export class OrdenService extends BaseService {
     }
 
 
+    async getCierresCaja(): Promise<ApiResponse<CierreCaja[]>> {
+        try {
+            const supabase = await this.getSupabase();
+            const { data, error } = await supabase
+                .from(this.cierreTable)
+                .select(`
+                    *,
+                    usuario:usuario_id (
+                        nombre,
+                        apellido,
+                        rol:rol_id (
+                            nombre
+                        )
+                    )
+                `)
+                .order('created_at', { ascending: false });
+
+            if (error) return this.handleError(error);
+            return this.handleResponse(data as CierreCaja[], null);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    }
+
     async saveCierre(data: Omit<CierreCaja, 'id' | 'created_at' | 'empresa_id'>): Promise<ApiResponse<CierreCaja>> {
         try {
             const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
+            const { data: { user } } = await supabase.auth.getUser();
+
             const { data: cierre, error } = await supabase
                 .from(this.cierreTable)
-                .insert({ ...data, empresa_id: empresaId })
+                .insert({ 
+                    ...data, 
+                    empresa_id: empresaId,
+                    usuario_id: user?.id || null 
+                })
                 .select()
                 .maybeSingle();
 
