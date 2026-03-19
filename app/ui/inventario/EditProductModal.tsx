@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import { updateRecetaAction } from '@/lib/actions/receta.actions';
 import { Receta } from '@/lib/types';
+import { useUsuario } from '@/app/lib/useUsuario';
 
 interface EditProductModalProps {
     isOpen: boolean;
@@ -17,6 +18,8 @@ const FIELD_CLASS = 'w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/
 const LABEL_CLASS = 'block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2';
 
 export default function EditProductModal({ isOpen, product, onClose, onSuccess }: EditProductModalProps) {
+    const { usuario, loading: loadingUsuario } = useUsuario();
+    const isAuthorized = usuario?.rol?.toLowerCase() === 'master' || usuario?.rol?.toLowerCase() === 'admin';
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -119,10 +122,10 @@ export default function EditProductModal({ isOpen, product, onClose, onSuccess }
                     </button>
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || loadingUsuario || !isAuthorized}
                         className="flex-[2] px-6 py-4 bg-nora-accent-500 text-white rounded-2xl font-black shadow-lg shadow-nora-accent-500/20 hover:bg-nora-accent-400 transition-all disabled:opacity-50"
                     >
-                        {loading ? 'Guardando...' : 'Guardar Cambios'}
+                        {loadingUsuario ? 'Verificando...' : !isAuthorized ? 'No autorizado' : loading ? 'Guardando...' : 'Guardar Cambios'}
                     </button>
                 </div>
             </form>

@@ -20,18 +20,23 @@ export default function InventoryHeader({ title, activeTab, onTabChange, showMen
             </h2>
             <div className="flex overflow-x-auto max-w-full no-scrollbar pb-1 sm:pb-0">
                 <div className="flex space-x-1 md:space-x-2 whitespace-nowrap">
-                    {showMenu && tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => onTabChange(tab.id)}
-                            className={`px-3 md:px-4 py-2 text-xs md:text-sm font-bold transition-all duration-200 rounded-lg ${activeTab === tab.id
-                                ? 'text-nora-accent-400 border-b-2 border-nora-accent-400 bg-nora-accent-500/10'
-                                : 'text-nora-gray-400 hover:text-nora-gray-100 hover:bg-nora-blue-700/50'
-                                }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                    {tabs.map((tab) => {
+                        if (tab.id === 'menu' && !showMenu) return null;
+                        if (tab.id === 'recetas' && !showRecetas) return null;
+                        
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => onTabChange(tab.id)}
+                                className={`px-3 md:px-4 py-2 text-xs md:text-sm font-bold transition-all duration-200 rounded-lg ${activeTab === tab.id
+                                    ? 'text-nora-accent-400 border-b-2 border-nora-accent-400 bg-nora-accent-500/10'
+                                    : 'text-nora-gray-400 hover:text-nora-gray-100 hover:bg-nora-blue-700/50'
+                                    }`}
+                            >
+                                {tab.label}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </header>

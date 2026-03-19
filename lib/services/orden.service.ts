@@ -6,7 +6,7 @@ export class OrdenService extends BaseService {
     private itemTable = 'orden_item';
     private cierreTable = 'cierre_caja';
 
-    /** Trae órdenes activas (pendiente + lista) con sus ítems */
+
     async getActivas(): Promise<ApiResponse<Orden[]>> {
         try {
             const supabase = await this.getSupabase();
@@ -42,7 +42,7 @@ export class OrdenService extends BaseService {
         }
     }
 
-    /** Crea una orden junto con todos sus ítems (transacción lógica) */
+
     async create(
         clienteNombre: string,
         items: { receta_id: string; nombre: string; precio: number; cantidad: number }[],
@@ -56,11 +56,51 @@ export class OrdenService extends BaseService {
             const impuesto = Math.round(subtotal * 0.13 * 100) / 100;
             const total = Math.round((subtotal + impuesto) * 100) / 100;
 
-            // Obtener usuario autenticado (necesario por NOT NULL en usuario_id)
+
             const { data: { user } } = await supabase.auth.getUser();
             const usuarioId = user?.id ?? null;
 
-            // 1. Insertar orden cabecera
+
+            const recetaIds = [...new Set(items.map(i => i.receta_id))];
+            const { data: recipeIngredients, error: riError } = await supabase
+                .from('receta_producto')
+                .select('receta_id, inventario_id, cantidad')
+                .in('receta_id', recetaIds);
+
+            if (riError) return this.handleError(riError);
+
+            if (recipeIngredients && recipeIngredients.length > 0) {
+
+                const totalRequired: Record<string, number> = {};
+                for (const item of items) {
+                    const ingredients = recipeIngredients.filter(ri => ri.receta_id === item.receta_id);
+                    for (const ri of ingredients) {
+                        const amount = Number(ri.cantidad) * item.cantidad;
+                        totalRequired[ri.inventario_id] = (totalRequired[ri.inventario_id] || 0) + amount;
+                    }
+                }
+
+
+                const invIds = Object.keys(totalRequired);
+                const { data: currentStock, error: stockError } = await supabase
+                    .from('inventario')
+                    .select('id, producto, cantidad')
+                    .in('id', invIds);
+
+                if (stockError) return this.handleError(stockError);
+
+                if (currentStock) {
+                    for (const stockItem of currentStock) {
+                        const needed = totalRequired[stockItem.id];
+                        if (Number(stockItem.cantidad) < needed) {
+                            return this.handleError(`Stock insuficiente de "${stockItem.producto}". Requerido: ${needed.toFixed(2)}, Disponible: ${Number(stockItem.cantidad).toFixed(2)}`);
+                        }
+                    }
+                }
+            }
+
+
+
             const { data: orden, error: ordenError } = await supabase
                 .from(this.ordenTable)
                 .insert({
@@ -81,7 +121,7 @@ export class OrdenService extends BaseService {
 
             if (ordenError || !orden) return this.handleResponse<Orden>(null, ordenError);
 
-            // 2. Insertar ítems
+
             const itemRows = items.map(i => ({ ...i, orden_id: orden.id }));
             const { error: itemsError } = await supabase.from(this.itemTable).insert(itemRows);
             if (itemsError) return this.handleResponse<Orden>(null, itemsError);
@@ -92,7 +132,7 @@ export class OrdenService extends BaseService {
         }
     }
 
-    /** Cambia el estado de una orden */
+
     async updateEstado(id: string, estado: Orden['estado']): Promise<ApiResponse<Orden>> {
         try {
             const supabase = await this.getSupabase();
@@ -111,7 +151,7 @@ export class OrdenService extends BaseService {
         }
     }
 
-    /** Stats para el dashboard admin: ventas de hoy y órdenes activas */
+
     async getDashboardStats(): Promise<ApiResponse<{
         ventasHoy: number;
         ordenesActivas: number;
@@ -138,7 +178,7 @@ export class OrdenService extends BaseService {
         }
     }
 
-    /** Ventas agrupadas por día — últimos N días (para el gráfico) */
+
     async getVentasSemana(dias = 7): Promise<ApiResponse<{ name: string; total: number }[]>> {
         try {
             const supabase = await this.getSupabase();
@@ -168,7 +208,7 @@ export class OrdenService extends BaseService {
         }
     }
 
-    /** Últimas N órdenes para tabla de transacciones */
+
     async getOrdenesRecientes(limite = 10): Promise<ApiResponse<Orden[]>> {
         try {
             const supabase = await this.getSupabase();
@@ -181,7 +221,7 @@ export class OrdenService extends BaseService {
         }
     }
 
-    /** Marca como pagada y registra el método de pago */
+
     async pagar(id: string, metodoPago: MetodoPago): Promise<ApiResponse<Orden>> {
         try {
             const supabase = await this.getSupabase();
@@ -200,7 +240,7 @@ export class OrdenService extends BaseService {
         }
     }
 
-    /** Cierre de caja: totales por método de pago de las órdenes pagadas hoy */
+
     async getCierreCaja(): Promise<ApiResponse<{
         total_efectivo: number; total_tarjeta: number;
         total_sinpe: number; total_otro: number;
@@ -240,7 +280,7 @@ export class OrdenService extends BaseService {
         }
     }
 
-    /** Guarda el registro de cierre de caja */
+
     async saveCierre(data: Omit<CierreCaja, 'id' | 'created_at' | 'empresa_id'>): Promise<ApiResponse<CierreCaja>> {
         try {
             const empresaId = await this.getEmpresaId();
@@ -259,7 +299,7 @@ export class OrdenService extends BaseService {
         }
     }
 
-    /** Obtiene el reporte de ventas por rango de fechas */
+
     async getReporteData(fechaInicio: string, fechaFin: string): Promise<ApiResponse<{
         kpis: { revenue: number, salesCount: number, avgTicket: number },
         topProducts: { name: string, quantity: number, revenue: number }[],

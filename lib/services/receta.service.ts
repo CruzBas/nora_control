@@ -138,19 +138,48 @@ export class RecetaService extends BaseService {
         try {
             const supabase = await this.getSupabase();
 
-            // Inner join: solo recetas que aparecen en receta_producto
+            // 1. Obtener todas las recetas que tienen ingredientes
+            // Se usa !inner para asegurar que solo recetas con ingredientes aparezcan
             const { data, error } = await supabase
                 .from(this.recetaTable)
                 .select(`
                     *,
-                    receta_producto!inner(id)
+                    receta_producto!inner(
+                        id,
+                        cantidad,
+                        inventario:inventario_id(id, cantidad)
+                    )
                 `)
                 .order('nombre', { ascending: true });
 
-            // Eliminar el campo receta_producto anidado innecesario del resultado
-            const clean = data?.map(({ receta_producto: _, ...rest }) => rest) ?? null;
+            if (error) return this.handleError(error);
 
-            return this.handleResponse<Receta[]>(clean as Receta[], error);
+            // 2. Calcular stock por receta (la porción limitante)
+            const recipesWithStock = (data || []).map((rec: any) => {
+                let limitantStock = Infinity;
+                
+                // Recorrer ingredientes de la receta
+                const ingredients = rec.receta_producto || [];
+                for (const item of ingredients) {
+                    const currentStock = Number(item.inventario?.cantidad || 0);
+                    const neededPerPortion = Number(item.cantidad || 1);
+                    
+                    // Cantidad máxima de porciones que se pueden hacer con este ingrediente
+                    const possiblePortions = neededPerPortion > 0 ? Math.floor(currentStock / neededPerPortion) : Infinity;
+                    
+                    if (possiblePortions < limitantStock) {
+                        limitantStock = possiblePortions;
+                    }
+                }
+
+                return {
+                    ...rec,
+                    stock_disponible: limitantStock === Infinity ? 0 : limitantStock,
+                    receta_producto: undefined // Limpiar el objeto anidado antes de enviarlo
+                };
+            });
+
+            return this.handleResponse<Receta[]>(recipesWithStock as Receta[], null);
         } catch (error) {
             return this.handleError<Receta[]>(error);
         }

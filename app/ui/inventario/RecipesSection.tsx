@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRecipes } from '@/app/lib/hooks';
 import { addIngredientToRecetaAction, removeIngredientFromRecetaAction } from '@/lib/actions/receta.actions';
+import { useUsuario } from '@/app/lib/useUsuario';
 
 export default function RecipesSection() {
+    const { usuario, loading: loadingUsuario } = useUsuario();
+    const isAuthorized = usuario?.rol?.toLowerCase() === 'master' || usuario?.rol?.toLowerCase() === 'admin';
     const {
         recipes,
         inventory,
@@ -123,51 +126,55 @@ export default function RecipesSection() {
                                 <h4 className="text-xl font-black text-nora-gray-100">
                                     {recipes.find(p => p.id === selectedProductId)?.nombre}
                                 </h4>
-                                <button
-                                    onClick={handleSaveRecipe}
-                                    disabled={savedRecipe}
-                                    className={`px-6 py-2 rounded-xl font-bold transition-all shadow-lg active:scale-95 flex items-center gap-2 ${savedRecipe
-                                        ? 'bg-nora-success text-white shadow-nora-success/20 cursor-default'
-                                        : 'bg-nora-accent-500 hover:bg-nora-accent-400 text-white shadow-nora-accent-500/20'
-                                        }`}
-                                >
-                                    <span className="material-symbols-outlined text-sm">
-                                        {savedRecipe ? 'check_circle' : 'save'}
-                                    </span>
-                                    {savedRecipe ? 'Guardado' : 'Guardar Receta'}
-                                </button>
+                                {!loadingUsuario && isAuthorized && (
+                                    <button
+                                        onClick={handleSaveRecipe}
+                                        disabled={savedRecipe}
+                                        className={`px-6 py-2 rounded-xl font-bold transition-all shadow-lg active:scale-95 flex items-center gap-2 ${savedRecipe
+                                            ? 'bg-nora-success text-white shadow-nora-success/20 cursor-default'
+                                            : 'bg-nora-accent-500 hover:bg-nora-accent-400 text-white shadow-nora-accent-500/20'
+                                            }`}
+                                    >
+                                        <span className="material-symbols-outlined text-sm">
+                                            {savedRecipe ? 'check_circle' : 'save'}
+                                        </span>
+                                        {savedRecipe ? 'Guardado' : 'Guardar Receta'}
+                                    </button>
+                                )}
                             </div>
 
                             <div className="space-y-4">
-                                <form onSubmit={handleAddIngredient} className="flex gap-3">
-                                    <select
-                                        name="inventario_id"
-                                        required
-                                        className="flex-1 p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-nora-gray-200 focus:ring-2 focus:ring-nora-accent-500 outline-none appearance-none"
-                                    >
-                                        <option value="">Seleccionar ingrediente...</option>
-                                        {inventory.map(item => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.producto} ({item.unidad_medida})
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        name="cantidad"
-                                        required
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="Cant."
-                                        className="w-24 p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-nora-gray-200 text-center outline-none focus:ring-2 focus:ring-nora-accent-500"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={addingIngredient}
-                                        className="bg-nora-accent-500/10 text-nora-accent-400 p-4 rounded-2xl font-black hover:bg-nora-accent-500/20 transition-all disabled:opacity-50"
-                                    >
-                                        <span className="material-symbols-outlined">{addingIngredient ? 'hourglass_empty' : 'add'}</span>
-                                    </button>
-                                </form>
+                                {!loadingUsuario && isAuthorized && (
+                                    <form onSubmit={handleAddIngredient} className="flex gap-3">
+                                        <select
+                                            name="inventario_id"
+                                            required
+                                            className="flex-1 p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-nora-gray-200 focus:ring-2 focus:ring-nora-accent-500 outline-none appearance-none"
+                                        >
+                                            <option value="">Seleccionar ingrediente...</option>
+                                            {inventory.map(item => (
+                                                <option key={item.id} value={item.id}>
+                                                    {item.producto} ({item.unidad_medida})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <input
+                                            name="cantidad"
+                                            required
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="Cant."
+                                            className="w-24 p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-nora-gray-200 text-center outline-none focus:ring-2 focus:ring-nora-accent-500"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={addingIngredient}
+                                            className="bg-nora-accent-500/10 text-nora-accent-400 p-4 rounded-2xl font-black hover:bg-nora-accent-500/20 transition-all disabled:opacity-50"
+                                        >
+                                            <span className="material-symbols-outlined">{addingIngredient ? 'hourglass_empty' : 'add'}</span>
+                                        </button>
+                                    </form>
+                                )}
 
                                 <div className="bg-nora-blue-900/20 border border-nora-blue-700/30 rounded-2xl overflow-hidden mt-4">
                                     <table className="w-full text-left text-sm">
@@ -201,12 +208,14 @@ export default function RecipesSection() {
                                                             {item.cantidad.toLocaleString('es-CR', { maximumFractionDigits: 3 })} {item.inventario?.unidad_medida}
                                                         </td>
                                                         <td className="px-6 py-4 text-right">
-                                                            <button
-                                                                onClick={() => handleDeleteIngredient(item.id)}
-                                                                className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
-                                                            >
-                                                                <span className="material-symbols-outlined text-sm">delete</span>
-                                                            </button>
+                                                            {!loadingUsuario && isAuthorized && (
+                                                                <button
+                                                                    onClick={() => handleDeleteIngredient(item.id)}
+                                                                    className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
+                                                                >
+                                                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                                                </button>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 ))

@@ -8,6 +8,7 @@ interface Product {
     price: number;
     image?: string;
     category: string;
+    stock_disponible?: number;
 }
 
 interface ProductCardProps {
@@ -16,11 +17,23 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onClick }: ProductCardProps) {
+    const isOutOfStock = product.stock_disponible !== undefined && product.stock_disponible <= 0;
+
     return (
         <button
-            onClick={onClick}
-            className="group relative bg-nora-blue-800 rounded-[2rem] p-4 lg:p-5 border border-nora-blue-700 hover:border-nora-accent-500 transition-all duration-500 flex flex-col items-start text-left hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:shadow-nora-accent-500/10 active:scale-[0.98] w-full h-full"
+            onClick={isOutOfStock ? undefined : onClick}
+            disabled={isOutOfStock}
+            className={`group relative bg-nora-blue-800 rounded-[2rem] p-4 lg:p-5 border border-nora-blue-700 transition-all duration-500 flex flex-col items-start text-left w-full h-full ${
+                isOutOfStock 
+                ? 'opacity-50 grayscale cursor-not-allowed' 
+                : 'hover:border-nora-accent-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:shadow-nora-accent-500/10 active:scale-[0.98]'
+            }`}
         >
+            {isOutOfStock && (
+                <div className="absolute top-4 right-4 z-10 bg-nora-danger/90 text-white text-[10px] font-black py-1 px-3 rounded-full uppercase tracking-widest shadow-lg animate-pulse">
+                    Sin Stock
+                </div>
+            )}
 
             <div className="w-full aspect-square sm:aspect-video lg:aspect-square xl:aspect-video bg-linear-to-br from-nora-blue-900 to-nora-blue-800 rounded-[1.5rem] mb-4 lg:mb-5 overflow-hidden flex items-center justify-center text-5xl lg:text-6xl group-hover:scale-105 transition-transform duration-700 border border-nora-blue-700/50 shadow-inner">
                 <span className="drop-shadow-2xl transform group-hover:rotate-6 transition-transform duration-500">
@@ -45,8 +58,16 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
                             ₡{product.price.toLocaleString('es-CR')}
                         </span>
                     </div>
-                    <div className="p-2 lg:p-3 bg-linear-to-br from-nora-accent-500 to-nora-accent-600 rounded-2xl text-nora-white group-hover:scale-110 transition-all shadow-lg shadow-nora-accent-500/30 group-hover:shadow-nora-accent-400/50">
-                        <PlusIcon className="h-5 w-5 lg:h-6 lg:w-6 stroke-[3]" />
+                    <div className={`p-2 lg:p-3 rounded-2xl text-nora-white transition-all shadow-lg ${
+                        isOutOfStock 
+                        ? 'bg-nora-blue-700 shadow-none grayscale opacity-40' 
+                        : 'bg-linear-to-br from-nora-accent-500 to-nora-accent-600 group-hover:scale-110 shadow-nora-accent-500/30 group-hover:shadow-nora-accent-400/50'
+                    }`}>
+                        {isOutOfStock ? (
+                            <span className="material-symbols-outlined h-5 w-5 lg:h-6 lg:w-6 flex items-center justify-center font-bold">block</span>
+                        ) : (
+                            <PlusIcon className="h-5 w-5 lg:h-6 lg:w-6 stroke-[3]" />
+                        )}
                     </div>
                 </div>
             </div>

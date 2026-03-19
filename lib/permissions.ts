@@ -40,26 +40,26 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
     Cajero: {
         home: undefined,
         orden: true,
-        cocina: false,       // puede solicitar
+        cocina: false,
         facturas: true,
         inventario: true,
-        reportes: false,     // puede solicitar
-        admin: false,        // puede solicitar
-        solicitudes: undefined,    // puede solicitar
+        reportes: false,
+        admin: false,
+        solicitudes: undefined,
     },
     Cocina: {
         home: undefined,
-        orden: false,        // puede solicitar
+        orden: false,
         cocina: true,
-        facturas: false,     // puede solicitar
+        facturas: false,
         inventario: true,
-        reportes: false,     // puede solicitar
-        admin: false,        // puede solicitar
-        solicitudes: undefined,    // puede solicitar
+        reportes: false,
+        admin: false,
+        solicitudes: undefined,
     },
 };
 
-/** Mapeo de rutas a identificadores de página */
+
 export const RUTA_A_PAGINA: Record<string, Pagina> = {
     '/dashboardMaster': 'home',
     '/dashboardMaster/ventas': 'orden',
@@ -71,24 +71,16 @@ export const RUTA_A_PAGINA: Record<string, Pagina> = {
     '/dashboardMaster/solicitudes': 'solicitudes',
 };
 
-/**
- * Verifica si un rol tiene acceso a una página.
- * Retorna true (acceso), false (puede solicitar), o undefined (oculto).
- */
+
 export function tieneAcceso(rol: string, pagina: Pagina): boolean | undefined {
     const rolKey = rol as RolNombre;
-    if (!(rolKey in PERMISOS)) return true; // Rol desconocido → acceso por defecto
+    if (!(rolKey in PERMISOS)) return true;
     return PERMISOS[rolKey][pagina];
 }
 
-/**
- * Obtiene la página correspondiente a una ruta.
- */
-export function rutaAPagina(pathname: string): Pagina | undefined {
-    // Coincidencia exacta primero
-    if (RUTA_A_PAGINA[pathname]) return RUTA_A_PAGINA[pathname];
 
-    // Coincidencia parcial (para sub-rutas como /dashboardMaster/ventas/nueva)
+export function rutaAPagina(pathname: string): Pagina | undefined {
+    if (RUTA_A_PAGINA[pathname]) return RUTA_A_PAGINA[pathname];
     const rutas = Object.keys(RUTA_A_PAGINA).sort((a, b) => b.length - a.length);
     for (const ruta of rutas) {
         if (pathname.startsWith(ruta)) return RUTA_A_PAGINA[ruta];

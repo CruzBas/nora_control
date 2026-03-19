@@ -1,6 +1,4 @@
-/**
- * Base types for the NORA CONTROL application.
- */
+
 
 export interface BaseEntity {
     id: string;
@@ -27,6 +25,7 @@ export interface Receta extends BaseEntity {
     nombre: string;
     precio: number;
     categoria: string;
+    stock_disponible?: number;
 }
 
 export interface RecetaProducto extends BaseEntity {

@@ -9,7 +9,6 @@ export interface OrderItemDeduct {
     quantity: number; // Cantidad de porciones pedidas
 }
 
-
 export async function completeOrderAndDeductInventoryAction(
     items: OrderItemDeduct[]
 ): Promise<ApiResponse<null>> {
@@ -17,7 +16,7 @@ export async function completeOrderAndDeductInventoryAction(
         const supabase = await createClient();
 
         for (const item of items) {
-
+            // Obtener los ingredientes de la receta
             const { data: ingredientes, error: ingredientesError } = await supabase
                 .from('receta_producto')
                 .select('inventario_id, cantidad')
@@ -30,33 +29,27 @@ export async function completeOrderAndDeductInventoryAction(
 
             if (!ingredientes || ingredientes.length === 0) continue;
 
-
+            // Descontar cada ingrediente según la cantidad de porciones pedidas
             for (const ingrediente of ingredientes) {
                 const cantidadADescontar = ingrediente.cantidad * item.quantity;
 
-
+                // Llamar a la función RPC deduct_inventory (tiene restricción CHECK cantidad >= 0 en base de datos)
                 const { error: updateError } = await supabase.rpc('deduct_inventory', {
                     p_inventario_id: ingrediente.inventario_id,
                     p_cantidad: cantidadADescontar,
                 });
 
                 if (updateError) {
-
-                    const { data: current } = await supabase
+                    console.error('[completeOrder] Error al deducir inventario:', updateError.message);
+                    
+                    // Si falla por restricción de cantidad (stock insuficiente)
+                    const { data: itemInv } = await supabase
                         .from('inventario')
-                        .select('cantidad')
+                        .select('producto')
                         .eq('id', ingrediente.inventario_id)
-                    .maybeSingle();
-
-                if (!current) console.log('No se pudo encontrar el item de inventario para deducir stock:', ingrediente.inventario_id);
-
-                    if (current) {
-                        const nuevaCantidad = Math.max(0, current.cantidad - cantidadADescontar);
-                        await supabase
-                            .from('inventario')
-                            .update({ cantidad: nuevaCantidad })
-                            .eq('id', ingrediente.inventario_id);
-                    }
+                        .maybeSingle();
+                    
+                    throw new Error(`Inventario insuficiente para: ${itemInv?.producto || 'un ingrediente'}`);
                 }
             }
         }

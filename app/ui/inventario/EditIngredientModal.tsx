@@ -1,8 +1,12 @@
 'use client';
-
+import { createClient } from '@/lib/supabase/client';
 import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import { updateInventarioAction } from '@/lib/actions/inventario.actions';
+import { useUsuario } from '@/app/lib/useUsuario';
+const supabase = createClient();
+
+
 
 interface Ingredient {
     id: string;
@@ -24,17 +28,19 @@ const FIELD_CLASS = 'w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/
 const LABEL_CLASS = 'block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2';
 
 export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuccess }: EditIngredientModalProps) {
+    const { usuario, loading: loadingUsuario } = useUsuario();
+    const isAuthorized = usuario?.rol?.toLowerCase() === 'master' || usuario?.rol?.toLowerCase() === 'admin';
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Valores del formulario inicializados con los datos del ingrediente
+
     const [nombre, setNombre] = useState('');
     const [cantidad, setCantidad] = useState('0');
     const [unidad_medida, setUnidadMedida] = useState('unidades');
     const [minimo, setMinimo] = useState('0');
     const [costo, setCosto] = useState('0');
 
-    // Sincronizar cuando cambia el ingrediente seleccionado
+
     useEffect(() => {
         if (ingredient) {
             setNombre(ingredient.name);
@@ -163,10 +169,10 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
                     </button>
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || loadingUsuario || !isAuthorized}
                         className="flex-[2] px-6 py-4 bg-nora-accent-500 text-white rounded-2xl font-black shadow-lg shadow-nora-accent-500/20 hover:bg-nora-accent-400 transition-all disabled:opacity-50"
                     >
-                        {loading ? 'Guardando...' : 'Guardar Cambios'}
+                        {loadingUsuario ? 'Verificando...' : !isAuthorized ? 'No autorizado' : loading ? 'Guardando...' : 'Guardar Cambios'}
                     </button>
                 </div>
             </form>

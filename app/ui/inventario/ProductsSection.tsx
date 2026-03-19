@@ -6,8 +6,11 @@ import { deleteRecetaAction } from '@/lib/actions/receta.actions';
 import { Receta } from '@/lib/types';
 import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';
+import { useUsuario } from '@/app/lib/useUsuario';
 
 export default function ProductsSection() {
+    const { usuario, loading: loadingUsuario } = useUsuario();
+    const isAuthorized = usuario?.rol?.toLowerCase() === 'master' || usuario?.rol?.toLowerCase() === 'admin';
     const { recipes: products, loading, error, refresh } = useRecipes();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Receta | null>(null);
@@ -37,13 +40,15 @@ export default function ProductsSection() {
                     <h3 className="text-2xl font-black text-nora-gray-100">Productos del Menú</h3>
                     <p className="text-nora-gray-400 text-sm">Gestiona los artículos que venderás en caja.</p>
                 </div>
-                <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="bg-nora-accent-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-nora-accent-500/20 hover:bg-nora-accent-400 transition-all active:scale-95 cursor-pointer"
-                    id="Agregar"
-                >
-                    + Nuevo Producto
-                </button>
+                {!loadingUsuario && isAuthorized && (
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="bg-nora-accent-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-nora-accent-500/20 hover:bg-nora-accent-400 transition-all active:scale-95 cursor-pointer"
+                        id="Agregar"
+                    >
+                        + Nuevo Producto
+                    </button>
+                )}
             </div>
 
             <AddProductModal
@@ -94,20 +99,24 @@ export default function ProductsSection() {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={() => setEditingProduct(product)}
-                                                className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors"
-                                                title="Editar producto"
-                                            >
-                                                <span className="material-symbols-outlined text-sm">edit</span>
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(product)}
-                                                className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
-                                                title="Eliminar producto"
-                                            >
-                                                <span className="material-symbols-outlined text-sm">delete</span>
-                                            </button>
+                                            {!loadingUsuario && isAuthorized && (
+                                                <button
+                                                    onClick={() => setEditingProduct(product)}
+                                                    className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors"
+                                                    title="Editar producto"
+                                                >
+                                                    <span className="material-symbols-outlined text-sm">edit</span>
+                                                </button>
+                                            )}
+                                            {!loadingUsuario && isAuthorized && (
+                                                <button
+                                                    onClick={() => handleDelete(product)}
+                                                    className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
+                                                    title="Eliminar producto"
+                                                >
+                                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

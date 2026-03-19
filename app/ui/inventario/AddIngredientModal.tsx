@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Modal from '../common/Modal';
 import { createInventarioAction } from '@/lib/actions/inventario.actions';
+import { useUsuario } from '@/app/lib/useUsuario';
 
 interface AddIngredientModalProps {
     isOpen: boolean;
@@ -11,6 +12,8 @@ interface AddIngredientModalProps {
 }
 
 export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIngredientModalProps) {
+    const { usuario, loading: loadingUsuario } = useUsuario();
+    const isAuthorized = usuario?.rol?.toLowerCase() === 'master' || usuario?.rol?.toLowerCase() === 'admin';
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -134,10 +137,10 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
                     </button>
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || loadingUsuario || !isAuthorized}
                         className="flex-[2] px-6 py-4 bg-nora-accent-500 text-white rounded-2xl font-black shadow-lg shadow-nora-accent-500/20 hover:bg-nora-accent-400 transition-all disabled:opacity-50"
                     >
-                        {loading ? 'Guardando...' : 'Guardar Ingrediente'}
+                        {loadingUsuario ? 'Verificando...' : !isAuthorized ? 'No autorizado' : loading ? 'Guardando...' : 'Guardar Ingrediente'}
                     </button>
                 </div>
             </form>

@@ -118,7 +118,13 @@ export default function VentasPage() {
                             {filteredProducts.map(product => (
                                 <ProductCard
                                     key={product.id}
-                                    product={{ id: product.id, name: product.nombre, price: product.precio, category: product.categoria }}
+                                    product={{ 
+                                        id: product.id, 
+                                        name: product.nombre, 
+                                        price: product.precio, 
+                                        category: product.categoria,
+                                        stock_disponible: product.stock_disponible
+                                    }}
                                     onClick={() => addToCart(product)}
                                 />
                             ))}

@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { useInventory } from '@/app/lib/hooks';
 import AddIngredientModal from './AddIngredientModal';
 import EditIngredientModal from './EditIngredientModal';
+import { useUsuario } from '@/app/lib/useUsuario';
 
 interface AgregarProps {
     showAgregar?: boolean;
 }
 
-// Tipo local que usa el hook useInventory
+
 interface Ingredient {
     id: string;
     name: string;
@@ -22,6 +23,8 @@ interface Ingredient {
 export default function IngredientsSection({
     showAgregar = true
 }: AgregarProps) {
+    const { usuario, loading: loadingUsuario } = useUsuario();
+    const isAuthorized = usuario?.rol?.toLowerCase() === 'master' || usuario?.rol?.toLowerCase() === 'admin';
     const { ingredients, loading, error, deleteIngredient, refresh } = useInventory();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
@@ -49,7 +52,7 @@ export default function IngredientsSection({
                     <h3 className="text-2xl font-black text-nora-gray-100">Ingredientes</h3>
                     <p className="text-nora-gray-400 text-sm">Controla tus materias primas y existencias.</p>
                 </div>
-                {showAgregar && (
+                {showAgregar && !loadingUsuario && isAuthorized && (
                     <button
                         onClick={() => setIsAddModalOpen(true)}
                         className="bg-nora-accent-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-nora-accent-500/20 hover:bg-nora-accent-400 transition-all active:scale-95 cursor-pointer"
@@ -113,20 +116,24 @@ export default function IngredientsSection({
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => setEditingIngredient(item)}
-                                                    className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors"
-                                                    title="Editar ingrediente"
-                                                >
-                                                    <span className="material-symbols-outlined text-sm">edit</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => deleteIngredient(item.id)}
-                                                    className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
-                                                    title="Eliminar ingrediente"
-                                                >
-                                                    <span className="material-symbols-outlined text-sm">delete</span>
-                                                </button>
+                                                {!loadingUsuario && isAuthorized && (
+                                                    <button
+                                                        onClick={() => setEditingIngredient(item)}
+                                                        className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors"
+                                                        title="Editar ingrediente"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">edit</span>
+                                                    </button>
+                                                )}
+                                                {!loadingUsuario && isAuthorized && (
+                                                    <button
+                                                        onClick={() => deleteIngredient(item.id)}
+                                                        className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
+                                                        title="Eliminar ingrediente"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">delete</span>
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
