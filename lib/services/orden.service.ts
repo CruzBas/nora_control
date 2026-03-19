@@ -313,10 +313,10 @@ export class OrdenService extends BaseService {
 
             const { data: cierre, error } = await supabase
                 .from(this.cierreTable)
-                .insert({ 
-                    ...data, 
+                .insert({
+                    ...data,
                     empresa_id: empresaId,
-                    usuario_id: user?.id || null 
+                    usuario_id: user?.id || null
                 })
                 .select()
                 .maybeSingle();

@@ -96,7 +96,7 @@ export default function CierresClient() {
                     {cierres.map((cierre) => (
                         <div key={cierre.id} className="bg-nora-blue-800 rounded-3xl p-6 border border-nora-blue-700 shadow-xl overflow-hidden relative group hover:border-nora-accent-500/50 transition-all duration-300">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-nora-accent-500/5 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
-                            
+
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <div className="flex items-center gap-2 text-nora-accent-400 font-bold mb-1">
@@ -107,7 +107,7 @@ export default function CierresClient() {
                                         <span>Hora: {new Date(cierre.created_at).toLocaleTimeString('es-CR')}</span>
                                     </div>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => imprimir(cierre)}
                                     className="p-2 bg-nora-blue-700 hover:bg-nora-accent-500 text-nora-gray-300 hover:text-white rounded-xl transition-all"
                                     title="Imprimir"
