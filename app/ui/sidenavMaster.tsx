@@ -3,15 +3,17 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import NavLinksCajero from './nav-links-cajero';
+import NavLinksMaster from './nav-links-master';
 
-export default function SidenavCajero() {
+export default function SidenavMaster() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const pathname = usePathname();
+
 
     useEffect(() => {
         setMobileOpen(false);
     }, [pathname]);
+
 
     useEffect(() => {
         if (mobileOpen) {
@@ -24,12 +26,14 @@ export default function SidenavCajero() {
         };
     }, [mobileOpen]);
 
+
     const sidebarContent = (
         <>
-            <Link href="/dashboardCajero" className="p-5 flex items-center gap-3 group">
+
+            <Link href="/dashboardMaster" className="p-5 flex items-center gap-3 group">
                 <div className="bg-nora-accent-500 rounded-lg p-1.5 flex items-center justify-center shadow-[var(--nora-shadow-accent)] transition-transform duration-200 group-hover:scale-105">
                     <span className="material-symbols-outlined text-white text-[22px]">
-                        point_of_sale
+                        dashboard_customize
                     </span>
                 </div>
                 <div>
@@ -37,12 +41,13 @@ export default function SidenavCajero() {
                         Nora Control
                     </h1>
                     <p className="text-[11px] text-nora-gray-400 font-medium mt-0.5">
-                        Punto de Venta
+                        Administración
                     </p>
                 </div>
             </Link>
 
-            <NavLinksCajero onLinkClick={() => setMobileOpen(false)} />
+
+            <NavLinksMaster onLinkClick={() => setMobileOpen(false)} />
 
 
         </>
@@ -50,20 +55,22 @@ export default function SidenavCajero() {
 
     return (
         <>
+
             <div className="md:hidden flex items-center justify-between bg-nora-blue-800 px-4 py-3 border-b border-nora-blue-700/50 sticky top-0 z-40">
-                <Link href="/dashboardCajero" className="flex items-center gap-2">
+                <Link href="/dashboardMaster" className="flex items-center gap-2">
                     <div className="bg-nora-accent-500 rounded-lg p-1 flex items-center justify-center">
                         <span className="material-symbols-outlined text-white text-[18px]">
-                            point_of_sale
+                            dashboard_customize
                         </span>
                     </div>
                     <span className="text-sm font-bold text-nora-gray-100">
-                        Nora POS
+                        Nora Control
                     </span>
                 </Link>
                 <button
                     onClick={() => setMobileOpen(!mobileOpen)}
-                    className="p-2 rounded-lg text-nora-gray-300 hover:bg-nora-blue-700/50"
+                    aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
+                    className="p-2 rounded-lg text-nora-gray-300 hover:bg-nora-blue-700/50 hover:text-nora-gray-100 transition-colors"
                 >
                     <span className="material-symbols-outlined text-[24px]">
                         {mobileOpen ? 'close' : 'menu'}
@@ -71,22 +78,26 @@ export default function SidenavCajero() {
                 </button>
             </div>
 
+
             {mobileOpen && (
                 <div
                     className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
                     onClick={() => setMobileOpen(false)}
+                    aria-hidden="true"
                 />
             )}
             <aside
                 className={`
                     md:hidden fixed top-0 left-0 z-50 h-full w-64
                     bg-nora-blue-800 border-r border-nora-blue-700/50
-                    flex flex-col transform transition-transform duration-300 ease-in-out
+                    flex flex-col
+                    transform transition-transform duration-300 ease-in-out
                     ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
             >
                 {sidebarContent}
             </aside>
+
 
             <aside className="hidden md:flex md:flex-col md:w-64 md:shrink-0 h-full bg-nora-blue-800 border-r border-nora-blue-700/50">
                 {sidebarContent}

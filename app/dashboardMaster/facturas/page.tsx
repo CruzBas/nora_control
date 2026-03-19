@@ -7,41 +7,30 @@ import { Orden } from '@/lib/types';
 import PagarOrdenModal from '@/app/ui/ventas/PagarOrdenModal';
 import CierreCajaModal from '@/app/ui/ventas/CierreCajaModal';
 
-const ESTADO_BADGE: Record<string, { label: string; class: string }> = {
-    pendiente: { label: '🍳 En Cocina', class: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
-    lista: { label: '✅ Lista', class: 'bg-nora-success/20 text-nora-success border-nora-success/30' },
-};
 
-export default function DashboardCajero() {
-    const { ordenes, loading, error, refresh } = useOrdenes();
+export default function FacturasPage() {
+    const { ordenes, refresh } = useOrdenes();
     const [pagarOrden, setPagarOrden] = useState<Orden | null>(null);
     const [cierreOpen, setCierreOpen] = useState(false);
-
-    const fmt = (n: number) => `₡${n.toLocaleString('es-CR', { minimumFractionDigits: 0 })}`;
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-nora-blue-900">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-nora-accent-500"></div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-nora-blue-900 p-4 text-center">
-                <span className="material-symbols-outlined text-6xl text-nora-danger mb-4">error</span>
-                <h2 className="text-2xl font-bold text-white mb-2">Error al cargar órdenes</h2>
-                <p className="text-nora-gray-400 mb-6">{error}</p>
-                <button onClick={refresh} className="px-6 py-3 bg-nora-accent-500 text-white rounded-xl font-bold">Reintentar</button>
-            </div>
-        );
-    }
 
     const pendientes = ordenes.filter(o => o.estado === 'pendiente');
     const listas = ordenes.filter(o => o.estado === 'lista');
 
+    const fmt = (val: number) => new Intl.NumberFormat('es-CR', { 
+        style: 'currency', 
+        currency: 'CRC', 
+        maximumFractionDigits: 0 
+    }).format(val);
+
+    const ESTADO_BADGE: Record<string, { label: string; class: string }> = {
+        pendiente: { label: '🍳 En Cocina', class: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
+        lista: { label: '✅ Lista', class: 'bg-nora-success/20 text-nora-success border-nora-success/30' },
+    };
+
     return (
+
+
+
         <div className="flex flex-col min-h-screen bg-nora-blue-900">
             <div className="p-6 md:p-8 space-y-8">
 
@@ -62,7 +51,7 @@ export default function DashboardCajero() {
                             Cierre de Caja
                         </button>
                         <Link
-                            href="/dashboardCajero/ventas"
+                            href="/dashboardMaster/ventas"
                             className="flex items-center gap-2 bg-nora-accent-500 hover:bg-nora-accent-400 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-nora-accent-500/25 active:scale-95 text-sm"
                         >
                             <span className="material-symbols-outlined">add_shopping_cart</span>
@@ -155,5 +144,5 @@ export default function DashboardCajero() {
             {/* Modal cierre de caja */}
             <CierreCajaModal isOpen={cierreOpen} onClose={() => setCierreOpen(false)} />
         </div>
-    );
+    )
 }

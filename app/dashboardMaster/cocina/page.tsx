@@ -1,11 +1,10 @@
-'use client';
-
+'use client'
 import { useState } from 'react';
 import { Orden } from '@/lib/types';
 import { useOrdenes } from '@/app/lib/useOrdenes';
 import { marcarOrdenListaAction } from '@/lib/actions/ordenes.actions';
 
-export default function DashboardCocina() {
+export default function CocinaPage() {
     const { ordenes, loading, error, refresh } = useOrdenes();
     const [selectedOrden, setSelectedOrden] = useState<Orden | null>(null);
     const [completing, setCompleting] = useState(false);
@@ -56,8 +55,9 @@ export default function DashboardCocina() {
             </div>
         );
     }
-
     return (
+
+
         <div className="flex flex-col min-h-screen bg-nora-blue-900 p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
@@ -186,5 +186,5 @@ export default function DashboardCocina() {
                 </div>
             )}
         </div>
-    );
+    )
 }

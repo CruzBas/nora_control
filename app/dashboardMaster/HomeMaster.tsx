@@ -7,7 +7,7 @@ import TransactionsTable from '../ui/TransactionsTable';
 import { useInventory } from '@/app/lib/hooks';
 import { getDashboardStatsAction } from '@/lib/actions/ordenes.actions';
 
-export default function DashboardAdminPage() {
+export default function HomeMaster() {
     const { ingredients, loading: inventoryLoading } = useInventory();
     const [stats, setStats] = useState<{ ventasHoy: number; ordenesActivas: number; ventasAyer: number } | null>(null);
     const [statsLoading, setStatsLoading] = useState(true);
@@ -21,14 +21,12 @@ export default function DashboardAdminPage() {
         };
 
         fetchStats();
-        const interval = setInterval(fetchStats, 30000); // 30s
+        const interval = setInterval(fetchStats, 30000);
         return () => clearInterval(interval);
     }, []);
 
     const stockAlertsCount = ingredients.filter(i => i.cantidad <= i.minimo).length;
-
     const fmt = (n: number) => `₡${n.toLocaleString('es-CR', { minimumFractionDigits: 0 })}`;
-
 
     const variacion = stats
         ? stats.ventasAyer > 0

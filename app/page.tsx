@@ -38,24 +38,15 @@ export default function Home() {
           console.log('User ID from session:', session.user.id);
           console.log('User Email from session:', session.user.email);
 
-          if (email.includes('admin')) router.push('/dashboardAdmin');
-          else if (email.includes('cajero')) router.push('/dashboardCajero');
-          else if (email.includes('cocina')) router.push('/dashboardCocina');
-          else router.push('/dashboardCajero');
+          // Profile no encontrado, redirigir al dashboard unificado
+          router.push('/dashboardMaster');
           return;
         }
 
         const roleName = (profile.rol as any)?.nombre?.toLowerCase() || '';
 
-        if (roleName.includes('admin') || roleName.includes('propietario') || roleName.includes('owner')) {
-          router.push('/dashboardAdmin');
-        } else if (roleName.includes('cashier') || roleName.includes('cajero')) {
-          router.push('/dashboardCajero');
-        } else if (roleName.includes('cook') || roleName.includes('cocina')) {
-          router.push('/dashboardCocina');
-        } else {
-          router.push('/dashboardCajero');
-        }
+        // Todos los roles van al dashboard unificado
+        router.push('/dashboardMaster');
       }
     } catch (err: any) {
       setError(err.message || 'Credenciales incorrectas o error de conexión.');
