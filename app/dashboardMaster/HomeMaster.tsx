@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import MetricCard from '../ui/MetricCard';
 import SalesChart from '../ui/SalesChart';
 import TransactionsTable from '../ui/TransactionsTable';
-import { useInventory } from '@/app/lib/hooks';
+import { useInventory } from '@/lib/hooks/hooks';
 import { getDashboardStatsAction } from '@/lib/actions/ordenes.actions';
 
 export default function HomeMaster() {

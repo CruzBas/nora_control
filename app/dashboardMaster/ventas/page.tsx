@@ -8,7 +8,7 @@ import CartAside from '@/app/ui/ventas/CartAside';
 import CheckoutModal from '@/app/ui/ventas/CheckoutModal';
 import CierreCajaModal from '@/app/ui/ventas/CierreCajaModal';
 import Toast from '@/app/ui/ventas/Toast';
-import { usePOSProducts } from '@/app/lib/hooks';
+import { usePOSProducts } from '@/lib/hooks/hooks';
 import { createOrdenAction } from '@/lib/actions/ordenes.actions';
 import { Receta } from '@/lib/types';
 

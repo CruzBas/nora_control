@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import { updateInventarioAction } from '@/lib/actions/inventario.actions';
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 const supabase = createClient();
 
 

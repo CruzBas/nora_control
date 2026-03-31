@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRecipes } from '@/app/lib/hooks';
+import { useRecipes } from '@/lib/hooks/hooks';
 import { deleteRecetaAction } from '@/lib/actions/receta.actions';
 import { Receta } from '@/lib/types';
 import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 
 export default function ProductsSection() {
     const { usuario, loading: loadingUsuario } = useUsuario();

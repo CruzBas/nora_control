@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useOrdenes } from '@/app/lib/useOrdenes';
+import { useOrdenes } from '@/lib/hooks/useOrdenes';
 import { Orden } from '@/lib/types';
 import PagarOrdenModal from '@/app/ui/ventas/PagarOrdenModal';
 import CierreCajaModal from '@/app/ui/ventas/CierreCajaModal';

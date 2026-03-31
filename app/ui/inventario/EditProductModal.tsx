@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import { updateRecetaAction } from '@/lib/actions/receta.actions';
 import { Receta } from '@/lib/types';
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 
 interface EditProductModalProps {
     isOpen: boolean;

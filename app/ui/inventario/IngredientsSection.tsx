@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useInventory } from '@/app/lib/hooks';
+import { useInventory } from '@/lib/hooks/hooks';
 import AddIngredientModal from './AddIngredientModal';
 import EditIngredientModal from './EditIngredientModal';
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 
 interface AgregarProps {
     showAgregar?: boolean;

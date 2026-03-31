@@ -1,6 +1,6 @@
 'use client';
 
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 import HomeMaster from './HomeMaster';
 import HomeCocina from './HomeCocina';
 import HomeCajero from './HomeCajero';

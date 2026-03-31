@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 import { tieneAcceso, rutaAPagina, type Pagina } from '@/lib/permissions';
 import AccesoDenegadoModal from './common/AccesoDenegadoModal';
 

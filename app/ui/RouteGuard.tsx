@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 import { tieneAcceso, rutaAPagina } from '@/lib/permissions';
 import AccesoDenegadoModal from './common/AccesoDenegadoModal';
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Modal from '../common/Modal';
 import { createInventarioAction } from '@/lib/actions/inventario.actions';
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 
 interface AddIngredientModalProps {
     isOpen: boolean;

@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react';
 import { Orden } from '@/lib/types';
-import { useOrdenes } from '@/app/lib/useOrdenes';
+import { useOrdenes } from '@/lib/hooks/useOrdenes';
 import { marcarOrdenListaAction } from '@/lib/actions/ordenes.actions';
 
 export default function CocinaPage() {

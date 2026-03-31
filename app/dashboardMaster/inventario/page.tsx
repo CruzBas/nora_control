@@ -5,7 +5,7 @@ import InventoryHeader from '@/app/ui/inventario/InventoryHeader';
 import IngredientsSection from '@/app/ui/inventario/IngredientsSection';
 import ProductsSection from '@/app/ui/inventario/ProductsSection';
 import RecipesSection from '@/app/ui/inventario/RecipesSection';
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 
 
 export default function InventarioPage() {

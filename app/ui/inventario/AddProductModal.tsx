@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Modal from '../common/Modal';
 import { createRecetaAction } from '@/lib/actions/receta.actions';
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 
 interface AddProductModalProps {
     isOpen: boolean;

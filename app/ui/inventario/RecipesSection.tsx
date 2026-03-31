@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRecipes } from '@/app/lib/hooks';
+import { useRecipes } from '@/lib/hooks/hooks';
 import { addIngredientToRecetaAction, removeIngredientFromRecetaAction } from '@/lib/actions/receta.actions';
-import { useUsuario } from '@/app/lib/useUsuario';
+import { useUsuario } from '@/lib/hooks/useUsuario';
 
 export default function RecipesSection() {
     const { usuario, loading: loadingUsuario } = useUsuario();
