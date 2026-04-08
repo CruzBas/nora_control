@@ -15,6 +15,8 @@ const PAGINA_LABELS: Record<string, string> = {
     reportes: 'Reportes',
     admin: 'Panel Admin',
     solicitudes: 'Solicitudes',
+    cierres: 'Cierres',
+    organizaciones: 'Organizaciones',
 };
 
 interface RouteGuardProps {

@@ -6,6 +6,21 @@ export interface BaseEntity {
     updated_at?: string;
 }
 
+// ── Organizacion & Empresa ────────────────────────────────────
+
+export interface Organizacion extends BaseEntity {
+    nombre: string;
+    empresas?: Empresa[];
+}
+
+export interface Empresa extends BaseEntity {
+    nombre: string;
+    pais: string | null;
+    ubicacion: string | null;
+    organizacion_id: string | null;
+    organizacion?: Organizacion | null;
+}
+
 export interface ApiResponse<T> {
     data: T | null;
     error: string | null;

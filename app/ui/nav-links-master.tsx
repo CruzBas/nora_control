@@ -23,6 +23,7 @@ const allLinks: LinkItem[] = [
     { name: 'Reportes', href: '/dashboardMaster/reportes', icon: 'bar_chart', pagina: 'reportes' },
     { name: 'Cierres', href: '/dashboardMaster/cierres', icon: 'point_of_sale', pagina: 'cierres' },
     { name: 'Solicitudes', href: '/dashboardMaster/solicitudes', icon: 'approval', pagina: 'solicitudes' },
+    { name: 'Organizaciones', href: '/dashboardMaster/organizaciones', icon: 'corporate_fare', pagina: 'organizaciones' },
 ];
 
 const bottomLinks = [

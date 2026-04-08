@@ -12,7 +12,8 @@ export type Pagina =
     | 'reportes'
     | 'admin'
     | 'solicitudes'
-    | 'cierres';
+    | 'cierres'
+    | 'organizaciones';
 
 export type RolNombre = 'Master' | 'Admin' | 'Cajero' | 'Cocina';
 
@@ -28,6 +29,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         admin: true,
         solicitudes: true,
         cierres: true,
+        organizaciones: true,
     },
     Admin: {
         home: true,
@@ -39,6 +41,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         admin: true,
         solicitudes: true,
         cierres: true,
+        organizaciones: true,
     },
     Cajero: {
         home: undefined,
@@ -50,6 +53,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         admin: false,
         solicitudes: undefined,
         cierres: false,
+        organizaciones: undefined,
     },
     Cocina: {
         home: undefined,
@@ -61,6 +65,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         admin: false,
         solicitudes: undefined,
         cierres: false,
+        organizaciones: undefined,
     },
 };
 
@@ -75,6 +80,7 @@ export const RUTA_A_PAGINA: Record<string, Pagina> = {
     '/dashboardMaster/admin': 'admin',
     '/dashboardMaster/solicitudes': 'solicitudes',
     '/dashboardMaster/cierres': 'cierres',
+    '/dashboardMaster/organizaciones': 'organizaciones',
 };
 
 
