@@ -25,7 +25,7 @@ export class OrganizacionService extends BaseService {
                 .from('organizacion')
                 .insert({ nombre })
                 .select()
-                .single();
+                .maybeSingle();
 
             return this.handleResponse(data as Organizacion, error);
         } catch (error) {
@@ -41,7 +41,7 @@ export class OrganizacionService extends BaseService {
                 .update({ nombre })
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
 
             return this.handleResponse(data as Organizacion, error);
         } catch (error) {
@@ -88,7 +88,7 @@ export class OrganizacionService extends BaseService {
                 .update({ organizacion_id: organizacionId })
                 .eq('id', empresaId)
                 .select()
-                .single();
+                .maybeSingle();
 
             return this.handleResponse(data as Empresa, error);
         } catch (error) {
@@ -114,7 +114,7 @@ export class OrganizacionService extends BaseService {
                     ubicacion: ubicacion || null,
                 })
                 .select()
-                .single();
+                .maybeSingle();
 
             return this.handleResponse(data as Empresa, error);
         } catch (error) {
@@ -134,7 +134,7 @@ export class OrganizacionService extends BaseService {
                 .update(fields)
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
 
             return this.handleResponse(data as Empresa, error);
         } catch (error) {

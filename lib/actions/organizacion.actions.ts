@@ -81,7 +81,7 @@ export async function crearEmpresaAction(
     return organizacionService.createEmpresa(nombre.trim(), organizacionId, pais?.trim(), ubicacion?.trim());
 }
 
-/** Asigna o desasigna una empresa a una organización. */
+
 export async function asignarEmpresaAction(empresaId: string, organizacionId: string | null) {
     const denied = await requireAdmin();
     if (denied) return denied;
@@ -93,7 +93,6 @@ export async function asignarEmpresaAction(empresaId: string, organizacionId: st
     return organizacionService.asignarEmpresaAOrganizacion(empresaId, organizacionId);
 }
 
-/** Actualiza los datos de una empresa (nombre, país, ubicación). */
 export async function actualizarEmpresaAction(
     id: string,
     fields: { nombre?: string; pais?: string | null; ubicacion?: string | null }
