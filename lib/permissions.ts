@@ -10,6 +10,7 @@ export type Pagina =
     | 'facturas'
     | 'inventario'
     | 'reportes'
+    | 'proveedores'
     | 'admin'
     | 'solicitudes'
     | 'cierres'
@@ -27,6 +28,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         inventario: true,
         reportes: true,
         admin: true,
+        proveedores: true,
         solicitudes: true,
         cierres: true,
         organizaciones: true,
@@ -39,6 +41,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         inventario: true,
         reportes: true,
         admin: true,
+        proveedores: true,
         solicitudes: true,
         cierres: true,
         organizaciones: true,
@@ -51,6 +54,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         inventario: true,
         reportes: false,
         admin: false,
+        proveedores: false,
         solicitudes: undefined,
         cierres: false,
         organizaciones: undefined,
@@ -62,6 +66,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         facturas: false,
         inventario: true,
         reportes: false,
+        proveedores: false,
         admin: false,
         solicitudes: undefined,
         cierres: false,

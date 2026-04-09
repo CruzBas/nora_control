@@ -89,6 +89,9 @@ export interface Ingredient {
     unidad_medida: string;
     minimo: number;
     costo: number;
+    proveedor_id?: string;
+    cantidad_reorden?: number;
+    proveedor?: any;
 }
 
 import { getInventarioAction, deleteInventarioAction } from '@/lib/actions/inventario.actions';
@@ -109,7 +112,10 @@ export function useInventory() {
                     cantidad: item.cantidad,
                     unidad_medida: item.unidad_medida,
                     minimo: item.minimo,
-                    costo: item.costo
+                    costo: item.costo,
+                    proveedor_id: item.proveedor_id,
+                    cantidad_reorden: item.cantidad_reorden,
+                    proveedor: item.proveedor
                 }));
                 setIngredients(mappedData);
                 setError(null);

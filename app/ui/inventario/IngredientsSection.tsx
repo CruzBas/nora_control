@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useInventory } from '@/lib/hooks/hooks';
 import AddIngredientModal from './AddIngredientModal';
 import EditIngredientModal from './EditIngredientModal';
+import AlertasReabastecimiento from './AlertasReabastecimiento';
 import { useUsuario } from '@/lib/hooks/useUsuario';
 
 interface AgregarProps {
@@ -18,6 +19,9 @@ interface Ingredient {
     unidad_medida: string;
     minimo: number;
     costo: number;
+    proveedor_id?: string;
+    cantidad_reorden?: number;
+    proveedor?: any;
 }
 
 export default function IngredientsSection({
@@ -74,6 +78,8 @@ export default function IngredientsSection({
                 onClose={() => setEditingIngredient(null)}
                 onSuccess={() => { refresh(); setEditingIngredient(null); }}
             />
+
+            <AlertasReabastecimiento />
 
             <div className="bg-nora-blue-800/40 rounded-3xl border border-nora-blue-700/30 overflow-hidden shadow-sm backdrop-blur-sm">
                 <div className="overflow-x-auto">

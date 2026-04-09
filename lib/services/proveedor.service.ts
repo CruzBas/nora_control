@@ -1,40 +1,39 @@
-import { createClient } from '../supabase/server';
 import { BaseService } from './base.service';
-import { Inventario, ApiResponse } from '../types';
+import { Proveedor, ApiResponse } from '../types';
 
-export class InventarioService extends BaseService {
-    private table = 'inventario';
+export class ProveedorService extends BaseService {
+    private table = 'proveedores';
 
-    async getAll(): Promise<ApiResponse<Inventario[]>> {
+    async getAll(): Promise<ApiResponse<Proveedor[]>> {
         try {
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.table)
-                .select('*, proveedor:proveedores(*)')
-                .order('producto', { ascending: true });
+                .select('*')
+                .order('nombre', { ascending: true });
 
-            return this.handleResponse<Inventario[]>(data, error);
+            return this.handleResponse<Proveedor[]>(data, error);
         } catch (error) {
-            return this.handleError<Inventario[]>(error);
+            return this.handleError<Proveedor[]>(error);
         }
     }
 
-    async getById(id: string): Promise<ApiResponse<Inventario>> {
+    async getById(id: string): Promise<ApiResponse<Proveedor>> {
         try {
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.table)
-                .select('*, proveedor:proveedores(*)')
+                .select('*')
                 .eq('id', id)
                 .maybeSingle();
 
-            return this.handleResponse<Inventario>(data, error);
+            return this.handleResponse<Proveedor>(data, error);
         } catch (error) {
-            return this.handleError<Inventario>(error);
+            return this.handleError<Proveedor>(error);
         }
     }
 
-    async create(item: Omit<Inventario, 'id' | 'created_at' | 'empresa_id'>): Promise<ApiResponse<Inventario>> {
+    async create(item: Omit<Proveedor, 'id' | 'created_at' | 'empresa_id'>): Promise<ApiResponse<Proveedor>> {
         try {
             const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
@@ -48,15 +47,15 @@ export class InventarioService extends BaseService {
                 .select()
                 .maybeSingle();
 
-            return this.handleResponse<Inventario>(data, error);
+            return this.handleResponse<Proveedor>(data, error);
         } catch (error) {
-            return this.handleError<Inventario>(error);
+            return this.handleError<Proveedor>(error);
         }
     }
 
-    async update(id: string, item: Partial<Inventario>): Promise<ApiResponse<Inventario>> {
+    async update(id: string, item: Partial<Proveedor>): Promise<ApiResponse<Proveedor>> {
         try {
-            const supabase = await createClient();
+            const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.table)
                 .update(item)
@@ -64,15 +63,15 @@ export class InventarioService extends BaseService {
                 .select()
                 .maybeSingle();
 
-            return this.handleResponse<Inventario>(data, error);
+            return this.handleResponse<Proveedor>(data, error);
         } catch (error) {
-            return this.handleError<Inventario>(error);
+            return this.handleError<Proveedor>(error);
         }
     }
 
     async delete(id: string): Promise<ApiResponse<null>> {
         try {
-            const supabase = await createClient();
+            const supabase = await this.getSupabase();
             const { error } = await supabase
                 .from(this.table)
                 .delete()
@@ -85,4 +84,4 @@ export class InventarioService extends BaseService {
     }
 }
 
-export const inventarioService = new InventarioService();
+export const proveedorService = new ProveedorService();

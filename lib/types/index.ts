@@ -21,6 +21,13 @@ export interface Empresa extends BaseEntity {
     organizacion?: Organizacion | null;
 }
 
+export interface Proveedor extends BaseEntity {
+    empresa_id: string;
+    nombre: string;
+    contacto?: string;
+    email?: string;
+}
+
 export interface ApiResponse<T> {
     data: T | null;
     error: string | null;
@@ -28,11 +35,15 @@ export interface ApiResponse<T> {
 }
 
 export interface Inventario extends BaseEntity {
+    empresa_id?: string;
     producto: string;
     cantidad: number;
     unidad_medida: string;
     minimo: number;
     costo: number;
+    proveedor_id?: string;
+    cantidad_reorden?: number;
+    proveedor?: Proveedor;
 }
 
 export interface Receta extends BaseEntity {

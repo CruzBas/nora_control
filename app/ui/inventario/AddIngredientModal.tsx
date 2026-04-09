@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Modal from '../common/Modal';
 import { createInventarioAction } from '@/lib/actions/inventario.actions';
 import { useUsuario } from '@/lib/hooks/useUsuario';
+import { useProveedores } from '@/lib/hooks/useProveedores';
 
 interface AddIngredientModalProps {
     isOpen: boolean;
@@ -14,6 +15,7 @@ interface AddIngredientModalProps {
 export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIngredientModalProps) {
     const { usuario, loading: loadingUsuario } = useUsuario();
     const isAuthorized = usuario?.rol?.toLowerCase() === 'master' || usuario?.rol?.toLowerCase() === 'admin';
+    const { proveedores } = useProveedores();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +30,9 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
             cantidad: Number(formData.get('cantidad')),
             unidad_medida: formData.get('unidad_medida') as string,
             minimo: Number(formData.get('minimo')),
-            costo: Number(formData.get('costo'))
+            costo: Number(formData.get('costo')),
+            proveedor_id: formData.get('proveedor_id') as string || undefined,
+            cantidad_reorden: parseFloat(formData.get('cantidad_reorden') as string) || 0,
         };
 
         try {
@@ -114,6 +118,38 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
                         />
                     </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2">
+                            Proveedor
+                        </label>
+                        <select
+                            name="proveedor_id"
+                            className="w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-white focus:ring-2 focus:ring-nora-accent-500 outline-none"
+                            defaultValue=""
+                        >
+                            <option value="">-- Sin Proveedor --</option>
+                            {proveedores.map(prov => (
+                                <option key={prov.id} value={prov.id}>{prov.nombre}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2">
+                            Cantidad a Reordenar
+                        </label>
+                        <input
+                            type="number"
+                            name="cantidad_reorden"
+                            step="0.01"
+                            defaultValue="0"
+                            min="0"
+                            className="w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-white focus:ring-2 focus:ring-nora-accent-500 outline-none"
+                        />
+                    </div>
+                </div>
+
                 <div>
                     <label className="block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2">
                         Costo por unidad (¢)

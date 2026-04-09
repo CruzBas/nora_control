@@ -1,12 +1,14 @@
 'use client';
+
 import { createClient } from '@/lib/supabase/client';
 import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import { updateInventarioAction } from '@/lib/actions/inventario.actions';
 import { useUsuario } from '@/lib/hooks/useUsuario';
+import { useProveedores } from '@/lib/hooks/useProveedores';
+import { Proveedor } from '@/lib/types';
+
 const supabase = createClient();
-
-
 
 interface Ingredient {
     id: string;
@@ -15,6 +17,9 @@ interface Ingredient {
     unidad_medida: string;
     minimo: number;
     costo: number;
+    proveedor_id?: string;
+    cantidad_reorden?: number;
+    proveedor?: Proveedor;
 }
 
 interface EditIngredientModalProps {
@@ -30,16 +35,17 @@ const LABEL_CLASS = 'block text-xs font-bold text-nora-gray-400 uppercase tracki
 export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuccess }: EditIngredientModalProps) {
     const { usuario, loading: loadingUsuario } = useUsuario();
     const isAuthorized = usuario?.rol?.toLowerCase() === 'master' || usuario?.rol?.toLowerCase() === 'admin';
+    const { proveedores } = useProveedores();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
 
     const [nombre, setNombre] = useState('');
     const [cantidad, setCantidad] = useState('0');
     const [unidad_medida, setUnidadMedida] = useState('unidades');
     const [minimo, setMinimo] = useState('0');
     const [costo, setCosto] = useState('0');
-
+    const [proveedor_id, setProveedorId] = useState('');
+    const [cantidad_reorden, setCantidadReorden] = useState('0');
 
     useEffect(() => {
         if (ingredient) {
@@ -48,6 +54,8 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
             setUnidadMedida(ingredient.unidad_medida ?? 'unidades');
             setMinimo(String(ingredient.minimo));
             setCosto(String(ingredient.costo));
+            setProveedorId(ingredient.proveedor_id || '');
+            setCantidadReorden(String(ingredient.cantidad_reorden || 0));
             setError(null);
         }
     }, [ingredient]);
@@ -66,6 +74,8 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
                 unidad_medida: unidad_medida,
                 minimo: Number(minimo),
                 costo: Number(costo),
+                proveedor_id: proveedor_id || undefined,
+                cantidad_reorden: Number(cantidad_reorden),
             });
 
             if (response.success) {
@@ -141,6 +151,33 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
                             min="0"
                             value={minimo}
                             onChange={e => setMinimo(e.target.value)}
+                            className={FIELD_CLASS}
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className={LABEL_CLASS}>Proveedor</label>
+                        <select
+                            value={proveedor_id}
+                            onChange={(e) => setProveedorId(e.target.value)}
+                            className={FIELD_CLASS}
+                        >
+                            <option value="">-- Sin Proveedor --</option>
+                            {proveedores.map(prov => (
+                                <option key={prov.id} value={prov.id}>{prov.nombre}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className={LABEL_CLASS}>Cantidad a Reordenar</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={cantidad_reorden}
+                            onChange={(e) => setCantidadReorden(e.target.value)}
                             className={FIELD_CLASS}
                         />
                     </div>

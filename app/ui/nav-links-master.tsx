@@ -21,6 +21,7 @@ const allLinks: LinkItem[] = [
     { name: 'Facturas', href: '/dashboardMaster/facturas', icon: 'receipt', pagina: 'facturas' },
     { name: 'Inventario', href: '/dashboardMaster/inventario', icon: 'inventory_2', pagina: 'inventario' },
     { name: 'Reportes', href: '/dashboardMaster/reportes', icon: 'bar_chart', pagina: 'reportes' },
+    { name: 'Proveedores', href: '/dashboardMaster/proveedores', icon: 'inventory', pagina: 'proveedores' },
     { name: 'Cierres', href: '/dashboardMaster/cierres', icon: 'point_of_sale', pagina: 'cierres' },
     { name: 'Solicitudes', href: '/dashboardMaster/solicitudes', icon: 'approval', pagina: 'solicitudes' },
     { name: 'Organizaciones', href: '/dashboardMaster/organizaciones', icon: 'corporate_fare', pagina: 'organizaciones' },
