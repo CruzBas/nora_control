@@ -110,7 +110,7 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
                     />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label className={LABEL_CLASS}>Cantidad Actual</label>
                         <input
@@ -156,7 +156,7 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className={LABEL_CLASS}>Proveedor</label>
                         <select

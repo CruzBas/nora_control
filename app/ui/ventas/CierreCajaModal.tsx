@@ -9,6 +9,8 @@ interface CierreCajaModalProps {
     onClose: () => void;
 }
 
+import Modal from '../common/Modal';
+
 export default function CierreCajaModal({ isOpen, onClose }: CierreCajaModalProps) {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -58,8 +60,6 @@ export default function CierreCajaModal({ isOpen, onClose }: CierreCajaModalProp
         }
     };
 
-    if (!isOpen) return null;
-
     const fmt = (n: number) => `₡${n.toLocaleString('es-CR', { minimumFractionDigits: 2 })}`;
 
     const imprimir = () => {
@@ -73,7 +73,7 @@ export default function CierreCajaModal({ isOpen, onClose }: CierreCajaModalProp
                 <style>
                     body { font-family: 'Courier New', Courier, monospace; padding: 20px; font-size: 14px; color: #000; }
                     .ticket { max-width: 350px; margin: 0 auto; border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
-                    h2, h3, h4 { text-align: center; margin: 5px 0; }
+                    h2, h3 { text-align: center; margin: 5px 0; }
                     .row { display: flex; justify-content: space-between; margin: 8px 0; }
                     .divider { border-top: 1px dashed #000; margin: 15px 0; }
                     .bold { font-weight: bold; }
@@ -86,7 +86,7 @@ export default function CierreCajaModal({ isOpen, onClose }: CierreCajaModalProp
                      <h3>Cierre de Caja</h3>
                      <div class="divider"></div>
                      <div class="row"><span>Fecha:</span><span>${new Date().toLocaleString('es-CR')}</span></div>
-                     <div class="row"><span>Órdenes Generadas:</span><span>${data.ordenes_count}</span></div>
+                     <div class="row"><span>Órdenes:</span><span>${data.ordenes_count}</span></div>
                      <div class="divider"></div>
                      <div class="row"><span>Efectivo:</span><span>${fmt(data.total_efectivo)}</span></div>
                      <div class="row"><span>Tarjeta:</span><span>${fmt(data.total_tarjeta)}</span></div>
@@ -94,10 +94,6 @@ export default function CierreCajaModal({ isOpen, onClose }: CierreCajaModalProp
                      <div class="row"><span>Otro:</span><span>${fmt(data.total_otro)}</span></div>
                      <div class="divider"></div>
                      <div class="row bold" style="font-size: 18px;"><span>TOTAL:</span><span>${fmt(data.total_general)}</span></div>
-                     <div class="divider"></div>
-                     <div class="text-center" style="font-size: 12px; margin-top:20px;">
-                        Reporte generado automáticamente.
-                     </div>
                   </div>
                   <script>
                     window.onload = () => { window.print(); window.close(); }
@@ -110,108 +106,82 @@ export default function CierreCajaModal({ isOpen, onClose }: CierreCajaModalProp
     };
 
     return (
-        <div className="fixed inset-0 bg-nora-blue-900/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="bg-nora-blue-800 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-nora-blue-700 overflow-hidden animate-in zoom-in duration-300">
-
-                <div className="p-6 border-b border-nora-blue-700 flex items-center justify-between bg-nora-blue-900/40">
-                    <div>
-                        <h3 className="text-xl font-black text-nora-white uppercase tracking-tight">Cierre de Caja</h3>
-                        <p className="text-nora-gray-400 text-xs mt-1">
-                            {new Date().toLocaleDateString('es-CR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        </p>
+        <Modal isOpen={isOpen} onClose={onClose} title="Cierre de Caja">
+            <div className="space-y-6">
+                {error && (
+                    <div className="p-3 bg-nora-danger/10 border border-nora-danger/30 rounded-xl text-nora-danger text-xs font-bold text-center">
+                        {error}
                     </div>
-                    <button onClick={onClose} className="p-2 text-nora-gray-400 hover:text-nora-white hover:bg-nora-blue-700 rounded-full transition-all">
-                        <XMarkIcon className="h-5 w-5" />
-                    </button>
-                </div>
+                )}
 
-                <div className="p-6 space-y-4">
-                    {error && (
-                        <div className="p-3 bg-nora-danger/10 border border-nora-danger/30 rounded-xl text-nora-danger text-sm font-bold text-center">
-                            {error}
-                        </div>
-                    )}
+                {!data && !loading && (
+                    <div className="text-center py-4 space-y-3">
+                        <div className="text-5xl">🏧</div>
+                        <p className="text-nora-gray-300 font-bold">¿Cerrar caja hoy?</p>
+                        <p className="text-nora-gray-500 text-xs text-balance px-4">Calcularemos los totales de todas las órdenes cobradas hasta este momento.</p>
+                        <button
+                            onClick={cargar}
+                            className="w-full mt-4 py-4 bg-nora-accent-500 text-white font-black rounded-2xl shadow-lg shadow-nora-accent-500/20 uppercase tracking-widest text-sm"
+                        >
+                            Calcular Totales
+                        </button>
+                    </div>
+                )}
 
-                    {!data && !loading && (
-                        <div className="text-center py-8 space-y-3">
-                            <div className="text-5xl">🏧</div>
-                            <p className="text-nora-gray-300 font-bold">¿Listo para cerrar caja?</p>
-                            <p className="text-nora-gray-500 text-sm">Se calcularán los totales de todas las órdenes pagadas hoy.</p>
-                        </div>
-                    )}
+                {loading && (
+                    <div className="flex flex-col items-center justify-center py-10 gap-3">
+                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-nora-accent-500" />
+                        <span className="text-nora-gray-400 text-xs animate-pulse">Obteniendo datos...</span>
+                    </div>
+                )}
 
-                    {loading && (
-                        <div className="flex justify-center py-12">
-                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-nora-accent-500" />
-                        </div>
-                    )}
-
-                    {data && !loading && (
-                        <div className="space-y-3">
-                            <div className="bg-nora-blue-900/40 rounded-2xl p-4 border border-nora-blue-700/50">
-                                <p className="text-xs font-black text-nora-gray-400 uppercase tracking-widest mb-3">
-                                    Órdenes cobradas hoy: {data.ordenes_count}
-                                </p>
+                {data && !loading && (
+                    <div className="space-y-4">
+                        <div className="bg-nora-blue-900/40 rounded-2xl p-5 border border-nora-blue-700/50">
+                            <div className="space-y-3">
                                 {[
                                     { label: '💵 Efectivo', value: data.total_efectivo },
                                     { label: '💳 Tarjeta', value: data.total_tarjeta },
                                     { label: '📱 SINPE', value: data.total_sinpe },
                                     { label: '❓ Otro', value: data.total_otro },
                                 ].map(({ label, value }) => (
-                                    <div key={label} className="flex justify-between items-center py-2 border-b border-nora-blue-700/30 last:border-0">
-                                        <span className="text-sm font-bold text-nora-gray-300">{label}</span>
+                                    <div key={label} className="flex justify-between items-center py-2 border-b border-nora-blue-700/20 last:border-0">
+                                        <span className="text-xs font-bold text-nora-gray-400">{label}</span>
                                         <span className="text-sm font-black text-nora-white">{fmt(value)}</span>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="bg-nora-accent-500/10 border border-nora-accent-500/30 rounded-2xl p-5 flex justify-between items-center">
-                                <span className="font-black text-nora-white uppercase tracking-wider text-sm">TOTAL DEL DÍA</span>
-                                <span className="text-3xl font-black text-nora-accent-400">
-                                    {fmt(data.total_general)}
-                                </span>
+                            <div className="mt-4 pt-4 border-t border-nora-accent-500/30 flex justify-between items-center">
+                                <span className="text-xs font-black text-nora-accent-400 uppercase">Total del Día</span>
+                                <span className="text-2xl font-black text-nora-accent-400">{fmt(data.total_general)}</span>
                             </div>
-
-                            {saved && (
-                                <div className="p-3 bg-nora-success/10 border border-nora-success/30 rounded-xl text-nora-success text-sm font-bold text-center">
-                                    ✅ Cierre guardado correctamente
-                                </div>
-                            )}
                         </div>
-                    )}
-                </div>
 
-                <div className="p-6 bg-nora-blue-900/50 flex gap-3">
-                    <button onClick={onClose} className="flex-1 py-4 text-nora-gray-400 font-bold hover:text-nora-white transition-colors text-sm uppercase tracking-widest">
-                        Cerrar
-                    </button>
-                    {!data ? (
-                        <button
-                            onClick={cargar}
-                            disabled={loading}
-                            className="flex-[2] py-4 bg-nora-accent-500 text-white font-black rounded-2xl hover:bg-nora-accent-400 transition-all disabled:opacity-50 uppercase tracking-widest text-sm"
-                        >
-                            Calcular Cierre
-                        </button>
-                    ) : (
-                        <>
+                        <div className="grid grid-cols-2 gap-3">
                             <button
                                 onClick={imprimir}
-                                className="flex-1 py-4 bg-nora-blue-700 text-white font-black rounded-2xl hover:bg-nora-blue-600 transition-all uppercase tracking-widest text-sm"
+                                className="py-4 bg-nora-blue-700/50 text-white font-black rounded-2xl border border-nora-blue-600/50 uppercase tracking-widest text-xs"
                             >
-                                Imprimir
+                                🖨️ Ticket
                             </button>
                             <button
                                 onClick={guardarCierre}
                                 disabled={saving || saved}
-                                className="flex-[2] py-4 bg-nora-success text-white font-black rounded-2xl hover:brightness-110 transition-all disabled:opacity-50 uppercase tracking-widest text-sm"
+                                className="py-4 bg-nora-success text-white font-black rounded-2xl shadow-lg shadow-nora-success/20 uppercase tracking-widest text-xs disabled:opacity-50"
                             >
-                                {saving ? 'Guardando...' : saved ? '✅ Guardado' : 'Guardar'}
+                                {saving ? '...' : saved ? '✓ Guardado' : '💾 Guardar'}
                             </button>
-                        </>
-                    )}
-                </div>
+                        </div>
+
+                        {saved && (
+                            <p className="text-center text-[10px] text-nora-success font-bold uppercase animate-bounce mt-2">
+                                El cierre se ha registrado exitosamente
+                            </p>
+                        )}
+                    </div>
+                )}
             </div>
-        </div>
+        </Modal>
     );
 }

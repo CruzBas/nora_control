@@ -69,7 +69,7 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
                         className="w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-white focus:ring-2 focus:ring-nora-accent-500 outline-none"
                     />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label className="block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2">
                             Cantidad Inicial
@@ -119,7 +119,7 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2">
                             Proveedor

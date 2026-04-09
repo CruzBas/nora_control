@@ -51,15 +51,15 @@ export default function IngredientsSection({
 
     return (
         <section className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h3 className="text-2xl font-black text-nora-gray-100">Ingredientes</h3>
-                    <p className="text-nora-gray-400 text-sm">Controla tus materias primas y existencias.</p>
+                    <h3 className="text-xl sm:text-2xl font-black text-nora-gray-100 uppercase tracking-tight">Ingredientes</h3>
+                    <p className="text-nora-gray-400 text-xs sm:text-sm">Controla tus materias primas y existencias.</p>
                 </div>
                 {showAgregar && !loadingUsuario && isAuthorized && (
                     <button
                         onClick={() => setIsAddModalOpen(true)}
-                        className="bg-nora-accent-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-nora-accent-500/20 hover:bg-nora-accent-400 transition-all active:scale-95 cursor-pointer"
+                        className="w-full sm:w-auto bg-nora-accent-500 text-white px-6 py-4 sm:py-3 rounded-2xl font-black shadow-lg shadow-nora-accent-500/20 hover:bg-nora-accent-400 transition-all active:scale-95 cursor-pointer uppercase tracking-widest text-xs"
                     >
                         + Nuevo Ingrediente
                     </button>
@@ -86,58 +86,58 @@ export default function IngredientsSection({
                     <table className="w-full text-left">
                         <thead className="bg-nora-blue-900/50 border-b border-nora-blue-700/50">
                             <tr>
-                                <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest whitespace-nowrap">Nombre</th>
-                                <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-center whitespace-nowrap">Cantidad</th>
-                                <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-center whitespace-nowrap">Mínimo</th>
-                                <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-center whitespace-nowrap">Costo (¢)</th>
-                                <th className="px-6 py-4 text-xs font-bold text-nora-gray-400 uppercase tracking-widest text-right whitespace-nowrap">Acciones</th>
+                                <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest whitespace-nowrap">Nombre</th>
+                                <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center whitespace-nowrap">Stock</th>
+                                <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center whitespace-nowrap">Mínimo</th>
+                                <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center whitespace-nowrap">Costo (¢)</th>
+                                <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-right whitespace-nowrap">⚙️</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-nora-blue-700/30">
                             {ingredients.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-10 text-center text-nora-gray-500 italic">
+                                    <td colSpan={5} className="px-6 py-12 text-center text-nora-gray-500 italic text-sm">
                                         No hay ingredientes registrados.
                                     </td>
                                 </tr>
                             ) : (
                                 ingredients.map((item) => (
-                                    <tr key={item.id} className="hover:bg-nora-blue-700/20 transition-colors group">
-                                        <td className="px-6 py-4">
-                                            <span className="text-sm font-bold text-nora-gray-100 whitespace-nowrap">{item.name}</span>
+                                    <tr key={item.id} className="hover:bg-nora-blue-700/10 transition-colors group">
+                                        <td className="px-5 sm:px-6 py-4">
+                                            <span className="text-xs sm:text-sm font-bold text-nora-gray-100 whitespace-nowrap">{item.name}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={`text-sm font-bold px-3 py-1 rounded-full whitespace-nowrap ${item.cantidad <= item.minimo
+                                        <td className="px-5 sm:px-6 py-4 text-center">
+                                            <span className={`text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-full whitespace-nowrap uppercase ${item.cantidad <= item.minimo
                                                 ? 'bg-nora-danger/20 text-nora-danger'
-                                                : 'bg-nora-success/20 text-nora-success'
+                                                : 'bg-nora-success/10 text-nora-success'
                                                 }`}>
                                                 {item.cantidad.toLocaleString('es-CR', { maximumFractionDigits: 3 })} {item.unidad_medida}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="text-sm text-nora-gray-400 whitespace-nowrap">{item.minimo.toLocaleString('es-CR', { maximumFractionDigits: 3 })} {item.unidad_medida}</span>
+                                        <td className="px-5 sm:px-6 py-4 text-center">
+                                            <span className="text-xs text-nora-gray-400 whitespace-nowrap">{item.minimo.toLocaleString('es-CR', { maximumFractionDigits: 3 })} {item.unidad_medida}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="text-sm font-bold text-nora-accent-400 whitespace-nowrap">¢{item.costo.toLocaleString()}</span>
+                                        <td className="px-5 sm:px-6 py-4 text-center">
+                                            <span className="text-xs sm:text-sm font-black text-nora-accent-400 whitespace-nowrap">₡{item.costo.toLocaleString()}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <td className="px-5 sm:px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-2">
                                                 {!loadingUsuario && isAuthorized && (
                                                     <button
                                                         onClick={() => setEditingIngredient(item)}
-                                                        className="p-2 text-nora-gray-400 hover:text-nora-accent-400 transition-colors"
-                                                        title="Editar ingrediente"
+                                                        className="p-2 text-nora-gray-400 hover:text-nora-accent-500 hover:bg-nora-accent-500/10 rounded-lg transition-all"
+                                                        title="Editar"
                                                     >
-                                                        <span className="material-symbols-outlined text-sm">edit</span>
+                                                        <span className="material-symbols-outlined text-base">edit</span>
                                                     </button>
                                                 )}
                                                 {!loadingUsuario && isAuthorized && (
                                                     <button
                                                         onClick={() => deleteIngredient(item.id)}
-                                                        className="p-2 text-nora-gray-400 hover:text-nora-danger transition-colors"
-                                                        title="Eliminar ingrediente"
+                                                        className="p-2 text-nora-gray-400 hover:text-nora-danger hover:bg-nora-danger/10 rounded-lg transition-all"
+                                                        title="Eliminar"
                                                     >
-                                                        <span className="material-symbols-outlined text-sm">delete</span>
+                                                        <span className="material-symbols-outlined text-base">delete</span>
                                                     </button>
                                                 )}
                                             </div>

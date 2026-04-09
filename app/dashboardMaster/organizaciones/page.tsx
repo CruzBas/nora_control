@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useUsuario } from '@/lib/hooks/useUsuario';
+import Modal from '@/app/ui/common/Modal';
 import {
     listarOrganizacionesAction,
     listarEmpresasAction,
@@ -10,44 +11,6 @@ import {
     actualizarEmpresaAction,
 } from '@/lib/actions/organizacion.actions';
 import { Organizacion, Empresa } from '@/lib/types';
-
-
-function Modal({
-    open,
-    onClose,
-    title,
-    children,
-}: {
-    open: boolean;
-    onClose: () => void;
-    title: string;
-    children: React.ReactNode;
-}) {
-    if (!open) return null;
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'rgba(15,30,51,0.88)', backdropFilter: 'blur(8px)' }}
-            onClick={onClose}
-        >
-            <div
-                className="w-full max-w-lg bg-nora-blue-800 border border-nora-blue-700/60 rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-black text-nora-gray-100">{title}</h2>
-                    <button
-                        onClick={onClose}
-                        className="w-8 h-8 rounded-full bg-nora-blue-700/50 hover:bg-nora-blue-600 flex items-center justify-center transition-all"
-                    >
-                        <span className="material-symbols-outlined text-[18px] text-nora-gray-400">close</span>
-                    </button>
-                </div>
-                {children}
-            </div>
-        </div>
-    );
-}
 
 
 export default function OrganizacionesPage() {
@@ -190,7 +153,7 @@ export default function OrganizacionesPage() {
 
 
     return (
-        <div className="flex flex-col min-h-screen bg-nora-blue-900">
+        <div className="flex flex-col min-h-screen bg-nora-blue-900 pb-20">
 
 
             {toast && (
@@ -208,44 +171,44 @@ export default function OrganizacionesPage() {
             <div className="p-6 md:p-8 space-y-8">
 
 
-                <div>
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className="w-10 h-10 rounded-2xl bg-nora-accent-500/10 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-nora-accent-400 text-[22px]">corporate_fare</span>
-                        </div>
-                        <h1 className="text-3xl font-black text-nora-gray-100 tracking-tight">
-                            Organizaciones y Sucursales
-                        </h1>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-nora-accent-500/10 flex items-center justify-center border border-nora-accent-500/20">
+                        <span className="material-symbols-outlined text-nora-accent-400 text-3xl sm:text-4xl">corporate_fare</span>
                     </div>
-                    <p className="text-nora-gray-400 font-medium mt-1 ml-1">
-                        Gestiona las empresas vinculadas a cada organización cliente.
-                    </p>
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-black text-nora-gray-100 tracking-tight uppercase">
+                            Organizaciones
+                        </h1>
+                        <p className="text-nora-gray-400 text-xs sm:text-sm font-medium tracking-wide">
+                            Gestión de sucursales y vinculación de empresas.
+                        </p>
+                    </div>
                 </div>
 
 
                 {empresasSinOrg.length > 0 && (
-                    <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-3xl p-5">
-                        <div className="flex items-center gap-2 mb-3">
-                            <span className="material-symbols-outlined text-[18px] text-yellow-400">warning</span>
-                            <p className="text-sm font-bold text-yellow-400">
-                                {empresasSinOrg.length} empresa{empresasSinOrg.length !== 1 ? 's' : ''} sin organización asignada
+                    <div className="bg-nora-accent-500/5 border border-nora-accent-500/20 rounded-3xl p-5 sm:p-6 shadow-sm">
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="material-symbols-outlined text-[20px] text-nora-accent-400">notification_important</span>
+                            <p className="text-sm font-black text-nora-accent-400 uppercase tracking-widest">
+                                {empresasSinOrg.length} empresa{empresasSinOrg.length !== 1 ? 's' : ''} pendiente{empresasSinOrg.length !== 1 ? 's' : ''}
                             </p>
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 sm:gap-3">
                             {empresasSinOrg.map((emp) => (
-                                <div key={emp.id} className="flex items-center gap-1">
-                                    <span className="px-3 py-1.5 bg-nora-blue-700/50 border border-nora-blue-600/40 rounded-xl text-xs text-nora-gray-300 font-medium">
+                                <div key={emp.id} className="flex items-center gap-0.5 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl overflow-hidden pl-3 pr-1 py-1">
+                                    <span className="text-[10px] sm:text-xs text-nora-gray-200 font-bold whitespace-nowrap mr-2">
                                         {emp.nombre}
                                     </span>
                                     {organizaciones.length > 0 && (
                                         <select
                                             defaultValue=""
                                             onChange={(e) => { if (e.target.value) handleVincular(emp.id, e.target.value); }}
-                                            className="px-2 py-1.5 bg-nora-blue-800 border border-nora-blue-600/40 rounded-xl text-xs text-nora-gray-400 outline-none cursor-pointer appearance-none"
+                                            className="px-2 py-1.5 bg-nora-accent-500/10 border border-nora-accent-500/30 rounded-xl text-[10px] text-nora-accent-400 font-black outline-none cursor-pointer hover:bg-nora-accent-500/20 transition-all appearance-none"
                                         >
-                                            <option value="" disabled>→ Vincular a…</option>
+                                            <option value="" disabled>→ VINCULAR</option>
                                             {organizaciones.map((org) => (
-                                                <option key={org.id} value={org.id} style={{ background: '#162D4A' }}>
+                                                <option key={org.id} value={org.id} style={{ background: '#162D4A', color: 'white' }}>
                                                     {org.nombre}
                                                 </option>
                                             ))}
@@ -259,33 +222,30 @@ export default function OrganizacionesPage() {
 
 
                 {organizaciones.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 bg-nora-blue-800/20 border-2 border-dashed border-nora-blue-700 rounded-3xl text-center">
-                        <span className="material-symbols-outlined text-5xl text-nora-gray-600 mb-4">corporate_fare</span>
-                        <p className="text-nora-gray-400 font-bold text-xl">No hay organizaciones registradas</p>
-                        <p className="text-nora-gray-500 text-sm mt-1">
-                            Contacta a soporte para registrar la primera organización.
-                        </p>
+                    <div className="flex flex-col items-center justify-center py-20 bg-nora-blue-800/20 border border-nora-blue-700/50 rounded-3xl text-center">
+                        <span className="material-symbols-outlined text-5xl text-nora-gray-600 mb-4 opacity-20">corporate_fare</span>
+                        <p className="text-nora-gray-400 font-black text-xs uppercase tracking-widest">No hay organizaciones registradas</p>
                     </div>
                 ) : (
 
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         {organizaciones.map((org) => {
                             const count = org.empresas?.length ?? 0;
                             return (
                                 <div
                                     key={org.id}
-                                    className="bg-nora-blue-800/40 border border-nora-blue-700/50 rounded-3xl overflow-hidden"
+                                    className="bg-nora-blue-800/40 border border-nora-blue-700/30 rounded-[2.5rem] overflow-hidden backdrop-blur-sm shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500"
                                 >
 
-                                    <div className="flex items-center justify-between px-6 py-4 bg-nora-blue-800/60 border-b border-nora-blue-700/40">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-xl bg-nora-accent-500/15 flex items-center justify-center">
-                                                <span className="material-symbols-outlined text-nora-accent-400 text-[18px]">corporate_fare</span>
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 sm:p-8 bg-nora-blue-900/40 border-b border-nora-blue-700/40 gap-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-nora-accent-500/15 flex items-center justify-center border border-nora-accent-500/20">
+                                                <span className="material-symbols-outlined text-nora-accent-400 text-2xl">business_center</span>
                                             </div>
                                             <div>
-                                                <h2 className="font-black text-nora-gray-100 text-lg leading-tight">{org.nombre}</h2>
-                                                <p className="text-nora-gray-500 text-xs">
-                                                    {count} sucursal{count !== 1 ? 'es' : ''} registrada{count !== 1 ? 's' : ''}
+                                                <h2 className="font-black text-nora-gray-100 text-xl sm:text-2xl tracking-tight uppercase leading-none">{org.nombre}</h2>
+                                                <p className="text-nora-gray-500 text-[10px] font-black uppercase tracking-widest mt-2 bg-nora-blue-900/60 px-2 py-0.5 rounded-lg w-fit">
+                                                    {count} sucursal{count !== 1 ? 'es' : ''}
                                                 </p>
                                             </div>
                                         </div>
@@ -296,60 +256,51 @@ export default function OrganizacionesPage() {
                                                 setFormUbicacion('');
                                                 setModalNuevaEmpresa(org);
                                             }}
-                                            className="flex items-center gap-2 px-4 py-2 bg-nora-accent-500 hover:bg-nora-accent-400 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-nora-accent-500/20 active:scale-95"
+                                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 sm:py-3 bg-nora-accent-500 hover:bg-nora-accent-400 text-white font-black text-[10px] rounded-2xl transition-all shadow-lg shadow-nora-accent-500/20 active:scale-95 uppercase tracking-widest"
                                         >
-                                            <span className="material-symbols-outlined text-[16px]">add_business</span>
+                                            <span className="material-symbols-outlined text-base">add_business</span>
                                             Nueva Sucursal
                                         </button>
                                     </div>
 
 
                                     {count === 0 ? (
-                                        <div className="px-6 py-8 text-center">
-                                            <span className="material-symbols-outlined text-3xl text-nora-gray-700 mb-2 block">store</span>
-                                            <p className="text-nora-gray-500 text-sm">Esta organización aún no tiene sucursales.</p>
-                                            <button
-                                                onClick={() => {
-                                                    setFormNombre('');
-                                                    setFormPais('');
-                                                    setFormUbicacion('');
-                                                    setModalNuevaEmpresa(org);
-                                                }}
-                                                className="mt-3 text-nora-accent-400 hover:text-nora-accent-300 text-sm font-bold transition-colors"
-                                            >
-                                                + Agregar la primera sucursal
-                                            </button>
+                                        <div className="px-6 py-16 text-center">
+                                            <span className="material-symbols-outlined text-4xl text-nora-gray-700 mb-3 block opacity-20">store</span>
+                                            <p className="text-nora-gray-500 text-xs font-black uppercase tracking-widest">Sin sucursales registradas</p>
                                         </div>
                                     ) : (
-                                        <div className="divide-y divide-nora-blue-700/30">
+                                        <div className="divide-y divide-nora-blue-700/20">
                                             {org.empresas!.map((emp, idx) => (
                                                 <div
                                                     key={emp.id}
-                                                    className="flex items-center gap-4 px-6 py-4 hover:bg-nora-blue-700/20 transition-all group"
+                                                    className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-6 sm:px-8 py-5 sm:py-4 hover:bg-nora-blue-700/10 transition-all group"
                                                 >
 
-                                                    <div className="w-7 h-7 rounded-lg bg-nora-blue-700/60 flex items-center justify-center flex-shrink-0">
+                                                    <div className="hidden sm:flex w-8 h-8 rounded-xl bg-nora-blue-700/30 items-center justify-center flex-shrink-0">
                                                         <span className="text-xs font-black text-nora-gray-500">{idx + 1}</span>
                                                     </div>
 
 
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-nora-gray-100 font-bold text-sm truncate">{emp.nombre}</p>
-                                                        {(emp.pais || emp.ubicacion) && (
-                                                            <p className="text-nora-gray-500 text-xs mt-0.5 flex items-center gap-1">
-                                                                <span className="material-symbols-outlined text-[12px]">location_on</span>
-                                                                {[emp.pais, emp.ubicacion].filter(Boolean).join(' · ')}
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="text-nora-gray-100 font-black text-sm uppercase tracking-tight truncate">{emp.nombre}</p>
+                                                            {emp.pais && (
+                                                                <span className="px-2 py-0.5 bg-nora-info/10 text-nora-info text-[9px] font-black rounded-lg uppercase tracking-tighter sm:tracking-normal">
+                                                                    {emp.pais}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {emp.ubicacion && (
+                                                            <p className="text-nora-gray-500 text-[10px] mt-1 flex items-center gap-1 font-bold">
+                                                                <span className="material-symbols-outlined text-[12px] opacity-40">location_on</span>
+                                                                {emp.ubicacion}
                                                             </p>
                                                         )}
                                                     </div>
 
 
-                                                    <div className="flex items-center gap-2">
-                                                        {emp.pais && (
-                                                            <span className="px-2 py-0.5 bg-nora-info/10 border border-nora-info/20 text-nora-info text-[11px] font-bold rounded-lg">
-                                                                {emp.pais}
-                                                            </span>
-                                                        )}
+                                                    <div className="flex items-center gap-3 w-full sm:w-auto justify-end sm:justify-start border-t border-nora-blue-700/30 sm:border-0 pt-3 sm:pt-0 mt-2 sm:mt-0">
                                                         <button
                                                             onClick={() => {
                                                                 setFormNombre(emp.nombre);
@@ -357,18 +308,20 @@ export default function OrganizacionesPage() {
                                                                 setFormUbicacion(emp.ubicacion || '');
                                                                 setModalEditarEmpresa(emp);
                                                             }}
-                                                            className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-xl bg-nora-blue-700/50 hover:bg-nora-info/20 flex items-center justify-center transition-all"
+                                                            className="flex-1 sm:flex-none px-4 sm:px-0 sm:w-10 sm:h-10 py-2 sm:py-0 rounded-xl bg-nora-blue-900/60 sm:bg-nora-blue-700/40 hover:bg-nora-info/20 flex items-center justify-center transition-all border border-nora-blue-700/50 sm:border-0"
                                                             title="Editar sucursal"
                                                         >
-                                                            <span className="material-symbols-outlined text-[14px] text-nora-info">edit</span>
+                                                            <span className="material-symbols-outlined text-base text-nora-info">edit</span>
+                                                            <span className="sm:hidden text-[10px] font-black uppercase ml-2 text-nora-info">Editar</span>
                                                         </button>
                                                         <button
                                                             onClick={() => handleDesvincular(emp.id, emp.nombre)}
                                                             disabled={procesando}
-                                                            className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-xl bg-nora-danger/10 hover:bg-nora-danger/20 border border-nora-danger/20 flex items-center justify-center transition-all"
+                                                            className="flex-1 sm:flex-none px-4 sm:px-0 sm:w-10 sm:h-10 py-2 sm:py-0 rounded-xl bg-nora-danger/10 hover:bg-nora-danger/20 border border-nora-danger/20 flex items-center justify-center transition-all"
                                                             title="Desvincular sucursal"
                                                         >
-                                                            <span className="material-symbols-outlined text-[14px] text-nora-danger">link_off</span>
+                                                            <span className="material-symbols-outlined text-base text-nora-danger">link_off</span>
+                                                            <span className="sm:hidden text-[10px] font-black uppercase ml-2 text-nora-danger">Desvincular</span>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -384,7 +337,7 @@ export default function OrganizacionesPage() {
 
 
             <Modal
-                open={!!modalNuevaEmpresa}
+                isOpen={!!modalNuevaEmpresa}
                 onClose={() => setModalNuevaEmpresa(null)}
                 title={`Nueva Sucursal — ${modalNuevaEmpresa?.nombre ?? ''}`}
             >
@@ -404,7 +357,7 @@ export default function OrganizacionesPage() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2">
                                 País
@@ -431,24 +384,23 @@ export default function OrganizacionesPage() {
                         </div>
                     </div>
 
-                    <p className="text-nora-gray-600 text-xs">
+                    <p className="text-nora-gray-600 text-[10px] font-medium leading-relaxed">
                         La sucursal se creará vinculada automáticamente a{' '}
                         <span className="text-nora-accent-400 font-bold">{modalNuevaEmpresa?.nombre}</span>.
                     </p>
 
-                    <div className="flex gap-3 pt-1">
+                    <div className="flex gap-3 pt-4 sm:pt-2 border-t border-nora-blue-700/30">
                         <button
                             onClick={() => setModalNuevaEmpresa(null)}
-                            className="flex-1 py-3 bg-nora-blue-700/50 hover:bg-nora-blue-700 text-nora-gray-300 font-bold text-sm rounded-2xl transition-all"
+                            className="flex-1 py-3 bg-nora-blue-700/30 hover:bg-nora-blue-700/50 text-nora-gray-400 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={handleCrearEmpresa}
                             disabled={procesando || !formNombre.trim()}
-                            className="flex-1 py-3 bg-nora-accent-500 hover:bg-nora-accent-400 text-white font-bold text-sm rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 py-3 bg-nora-accent-500 hover:bg-nora-accent-400 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                            <span className="material-symbols-outlined text-[16px]">add_business</span>
                             {procesando ? 'Creando...' : 'Crear Sucursal'}
                         </button>
                     </div>
@@ -457,7 +409,7 @@ export default function OrganizacionesPage() {
 
 
             <Modal
-                open={!!modalEditarEmpresa}
+                isOpen={!!modalEditarEmpresa}
                 onClose={() => setModalEditarEmpresa(null)}
                 title={`Editar Sucursal — ${modalEditarEmpresa?.nombre ?? ''}`}
             >
@@ -477,7 +429,7 @@ export default function OrganizacionesPage() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-nora-gray-400 uppercase tracking-widest mb-2">
                                 País
@@ -504,19 +456,18 @@ export default function OrganizacionesPage() {
                         </div>
                     </div>
 
-                    <div className="flex gap-3 pt-1">
+                    <div className="flex gap-3 pt-4 sm:pt-2 border-t border-nora-blue-700/30">
                         <button
                             onClick={() => setModalEditarEmpresa(null)}
-                            className="flex-1 py-3 bg-nora-blue-700/50 hover:bg-nora-blue-700 text-nora-gray-300 font-bold text-sm rounded-2xl transition-all"
+                            className="flex-1 py-3 bg-nora-blue-700/30 hover:bg-nora-blue-700/50 text-nora-gray-400 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={handleEditarEmpresa}
                             disabled={procesando || !formNombre.trim()}
-                            className="flex-1 py-3 bg-nora-info hover:bg-nora-info/80 text-white font-bold text-sm rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 py-3 bg-nora-info hover:bg-nora-info/80 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                            <span className="material-symbols-outlined text-[16px]">save</span>
                             {procesando ? 'Guardando...' : 'Guardar Cambios'}
                         </button>
                     </div>
