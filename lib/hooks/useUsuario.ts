@@ -9,7 +9,8 @@ export interface UsuarioInfo {
     apellido: string | null;
     email: string | null;
     empresa_id: string;
-    rol: string;         // nombre del rol: 'Master', 'Admin', 'Cajero', 'Cocina'
+
+    rol: string;
     rol_id: string;
 }
 
@@ -34,7 +35,7 @@ export function useUsuario() {
                 return;
             }
 
-            // Obtener perfil con rol
+
             const { data: profile } = await supabase
                 .from('usuario')
                 .select('*, rol(nombre)')
@@ -52,7 +53,7 @@ export function useUsuario() {
                     rol_id: profile.rol_id,
                 });
 
-                // Obtener accesos temporales vigentes
+
                 const { data: accesos } = await supabase
                     .from('solicitud_acceso')
                     .select('pagina, acceso_hasta')
@@ -73,9 +74,7 @@ export function useUsuario() {
         fetchUsuario();
     }, [fetchUsuario]);
 
-    /**
-     * Verifica si el usuario tiene acceso temporal vigente a una página.
-     */
+
     const tieneAccesoTemporal = useCallback((pagina: string): boolean => {
         return accesosTemporales.some(
             a => a.pagina === pagina && new Date(a.acceso_hasta) > new Date()

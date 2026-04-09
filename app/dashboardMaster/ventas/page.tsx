@@ -80,7 +80,7 @@ export default function VentasPage() {
         }
     };
 
-    // Adaptar para CartAside
+
     const cartForAside = cart.map(i => ({
         id: i.id, name: i.nombre, price: i.precio, category: i.categoria, quantity: i.quantity,
     }));

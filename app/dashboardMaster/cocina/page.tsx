@@ -9,13 +9,12 @@ export default function CocinaPage() {
     const [selectedOrden, setSelectedOrden] = useState<Orden | null>(null);
     const [completing, setCompleting] = useState(false);
 
-    // Solo mostrar órdenes pendientes en cocina
     const pendientes = ordenes.filter(o => o.estado === 'pendiente');
 
     const handleMarcarLista = async (orden: Orden) => {
         setCompleting(true);
         try {
-            // Construir ítems para descuento de inventario
+
             const itemsParaDescontar = (orden.items ?? []).map(item => ({
                 receta_id: item.receta_id,
                 quantity: item.cantidad,
@@ -78,7 +77,7 @@ export default function CocinaPage() {
                 </button>
             </div>
 
-            {/* Grid de órdenes pendientes */}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                 {pendientes.map(orden => (
                     <button
@@ -122,7 +121,7 @@ export default function CocinaPage() {
                 )}
             </div>
 
-            {/* Modal detalle de orden */}
+
             {selectedOrden && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-nora-blue-900/80 backdrop-blur-sm" onClick={() => setSelectedOrden(null)} />

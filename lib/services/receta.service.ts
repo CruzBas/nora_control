@@ -130,16 +130,12 @@ export class RecetaService extends BaseService {
         }
     }
 
-    /**
-     * Devuelve solo las recetas que tienen al menos un ingrediente configurado.
-     * Se usa en el POS para mostrar únicamente los productos listos para vender.
-     */
+
     async getAllForPOS(): Promise<ApiResponse<Receta[]>> {
         try {
             const supabase = await this.getSupabase();
 
-            // 1. Obtener todas las recetas que tienen ingredientes
-            // Se usa !inner para asegurar que solo recetas con ingredientes aparezcan
+
             const { data, error } = await supabase
                 .from(this.recetaTable)
                 .select(`
@@ -154,17 +150,17 @@ export class RecetaService extends BaseService {
 
             if (error) return this.handleError(error);
 
-            // 2. Calcular stock por receta (la porción limitante)
+
             const recipesWithStock = (data || []).map((rec: any) => {
                 let limitantStock = Infinity;
                 
-                // Recorrer ingredientes de la receta
+
                 const ingredients = rec.receta_producto || [];
                 for (const item of ingredients) {
                     const currentStock = Number(item.inventario?.cantidad || 0);
                     const neededPerPortion = Number(item.cantidad || 1);
                     
-                    // Cantidad máxima de porciones que se pueden hacer con este ingrediente
+
                     const possiblePortions = neededPerPortion > 0 ? Math.floor(currentStock / neededPerPortion) : Infinity;
                     
                     if (possiblePortions < limitantStock) {
@@ -175,7 +171,8 @@ export class RecetaService extends BaseService {
                 return {
                     ...rec,
                     stock_disponible: limitantStock === Infinity ? 0 : limitantStock,
-                    receta_producto: undefined // Limpiar el objeto anidado antes de enviarlo
+
+                    receta_producto: undefined
                 };
             });
 

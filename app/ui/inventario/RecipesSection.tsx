@@ -83,7 +83,7 @@ export default function RecipesSection() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Lista de Productos */}
+
                 <div className="md:col-span-1 bg-nora-blue-800/40 rounded-3xl border border-nora-blue-700/30 p-6 space-y-4 backdrop-blur-sm">
                     <h4 className="font-bold text-nora-gray-100 border-b border-nora-blue-700/50 pb-2 flex items-center gap-2">
                         <span className="material-symbols-outlined text-nora-accent-400">restaurant_menu</span>
@@ -113,7 +113,7 @@ export default function RecipesSection() {
                     )}
                 </div>
 
-                {/* Editor de Receta */}
+
                 <div className="md:col-span-2 bg-nora-blue-800/40 rounded-3xl border border-nora-blue-700/30 p-8 flex flex-col backdrop-blur-sm min-h-[400px]">
                     {!selectedProductId ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-center py-20 text-nora-gray-500 space-y-4">

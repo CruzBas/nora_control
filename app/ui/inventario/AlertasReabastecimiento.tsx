@@ -7,7 +7,7 @@ export default function AlertasReabastecimiento() {
 
     if (loading) return null;
 
-    // Filtrar los ingredientes que están por debajo o igual al mínimo
+
     const alertas = ingredients.filter(item => item.cantidad <= item.minimo);
 
     if (alertas.length === 0) return null;
@@ -23,10 +23,11 @@ export default function AlertasReabastecimiento() {
             return;
         }
 
-        const numero = item.proveedor.contacto.replace(/\D/g, ''); // Remover caracteres que no sean dígitos
+
+        const numero = item.proveedor.contacto.replace(/\D/g, '');
         const reorderQty = item.cantidad_reorden && item.cantidad_reorden > 0 ? item.cantidad_reorden : item.minimo * 2;
         
-        const mensaje = `Hola ${item.proveedor.nombre}, necesito solicitar el siguiente pedido:%0A%0A- *${reorderQty} ${item.unidad_medida}* de *${item.producto}*.%0A%0A¡Muchas gracias!`;
+        const mensaje = `Hola ${item.proveedor.nombre}, necesito solicitar el siguiente pedido:%0A%0A- *${reorderQty} ${item.unidad_medida}* de *${item.name}*.%0A%0A¡Muchas gracias!`;
         
         const url = `https://wa.me/${numero}?text=${mensaje}`;
         window.open(url, '_blank');

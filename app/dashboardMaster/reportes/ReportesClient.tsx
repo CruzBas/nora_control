@@ -15,7 +15,7 @@ interface ReportData {
 }
 
 export default function ReportesClient() {
-    // Default to the last 7 days including today
+
     const [dateStart, setDateStart] = useState(() => {
         const d = new Date();
         d.setDate(d.getDate() - 7);
@@ -57,26 +57,26 @@ export default function ReportesClient() {
     const handleExport = () => {
         if (!data) return;
 
+
         const csvRows = [];
-        // Header
         csvRows.push(`Reporte de Ventas NORA CONTROL`);
         csvRows.push(`Periodo:,${dateStart},a,${dateEnd}`);
-        csvRows.push(''); // Empty line
+        csvRows.push('');
 
-        // KPIs
+
         csvRows.push(`Ingresos Totales (Colones),Ventas Realizadas,Ticket Promedio (Colones)`);
-        csvRows.push(`${data.kpis.revenue},${data.kpis.salesCount},${data.kpis.avgTicket.toFixed(2)}`);
-        csvRows.push(''); // Empty line
 
-        // Top Productos
+        csvRows.push(`${data.kpis.revenue},${data.kpis.salesCount},${data.kpis.avgTicket.toFixed(2)}`);
+        csvRows.push('');
+
+
         csvRows.push('Top Productos');
         csvRows.push('Nombre del Producto,Cantidad Vendida,Ingresos Generados (Colones)');
         data.topProducts.forEach(p => {
+
             csvRows.push(`"${p.name}",${p.quantity},${p.revenue}`);
         });
-        csvRows.push(''); // Empty line
-
-        // Ventas por día
+        csvRows.push('');
         csvRows.push('Ventas por dia');
         csvRows.push('Dia,Ingresos Generados (Colones)');
         data.chartData.forEach(c => {

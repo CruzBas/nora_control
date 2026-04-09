@@ -64,7 +64,7 @@ export default function TransactionsTable() {
                 </div>
             ) : (
                 <>
-                    {/* Desktop table */}
+
                     <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="bg-nora-blue-700/25">
@@ -103,7 +103,7 @@ export default function TransactionsTable() {
                         </table>
                     </div>
 
-                    {/* Mobile cards */}
+
                     <div className="md:hidden divide-y divide-nora-blue-700/30">
                         {ordenes.map(orden => (
                             <div key={orden.id} className="p-4 flex items-center justify-between gap-3">

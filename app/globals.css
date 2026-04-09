@@ -1,88 +1,83 @@
 @import "tailwindcss";
 
-/* ============================================
-   NÖRA CONTROL 
-   ============================================
-   Paleta de colores global del sistema.
-   Usar estas variables en todo el proyecto.
-   ============================================ */
+
 
 :root {
-  /* ── Colores Primarios ── */
+
   --nora-blue-900: #0F1E33;
-  /* Fondo body / más oscuro */
+
   --nora-blue-800: #162D4A;
-  /* Card background oscuro */
+
   --nora-blue-700: #1F3A5F;
-  /* Card background principal */
+
   --nora-blue-600: #2A4D7A;
-  /* Hover / superficies elevadas */
+
   --nora-blue-500: #3A6399;
-  /* Bordes activos */
 
-  /* ── Color Acento (Naranja/Ámbar) ── */
+
+
   --nora-accent-600: #B5661A;
-  /* Acento oscuro / pressed */
-  --nora-accent-500: #D17A22;
-  /* Acento principal (botones, marca) */
-  --nora-accent-400: #E8922F;
-  /* Acento hover */
-  --nora-accent-300: #F0A94D;
-  /* Acento suave */
 
-  /* ── Neutros ── */
+  --nora-accent-500: #D17A22;
+
+  --nora-accent-400: #E8922F;
+
+  --nora-accent-300: #F0A94D;
+
+
+
   --nora-white: #FFFFFF;
   --nora-gray-100: #F1F5F9;
-  /* Texto claro sobre oscuro */
+
   --nora-gray-200: #E2E8F0;
   --nora-gray-300: #CBD5E1;
-  /* Labels secundarios */
+
   --nora-gray-400: #94A3B8;
-  /* Texto placeholder / deshabilitado */
+
   --nora-gray-500: #64748B;
-  /* Texto terciario / footer */
+
   --nora-gray-600: #475569;
   --nora-gray-700: #334155;
   --nora-gray-800: #1E293B;
   --nora-gray-900: #0F172A;
 
-  /* ── Semánticos ── */
+
   --nora-success: #22C55E;
   --nora-warning: #F59E0B;
   --nora-danger: #EF4444;
   --nora-info: #3B82F6;
 
-  /* ── Superficies ── */
+
   --nora-surface-glass: rgba(255, 255, 255, 0.05);
   --nora-border-glass: rgba(255, 255, 255, 0.10);
   --nora-border-glass-hover: rgba(255, 255, 255, 0.20);
 
-  /* ── Sombras ── */
+
   --nora-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --nora-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
   --nora-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
   --nora-shadow-accent: 0 4px 20px rgba(209, 122, 34, 0.25);
 
-  /* ── Tipografía ── */
+
   --nora-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  /* ── Radios ── */
+
   --nora-radius-sm: 0.5rem;
   --nora-radius-md: 0.75rem;
   --nora-radius-lg: 1rem;
   --nora-radius-xl: 1.5rem;
 
-  /* ── Transiciones ── */
+
   --nora-transition-fast: 150ms ease;
   --nora-transition-base: 250ms ease;
   --nora-transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* ── Mapping a tokens genéricos (para compatibilidad) ── */
+
   --background: var(--nora-blue-900);
   --foreground: var(--nora-gray-100);
 }
 
-/* ── Tailwind v4 Theme Integration ── */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -117,9 +112,7 @@
   --font-sans: var(--nora-font-sans);
 }
 
-/* ============================================
-   Estilos base globales
-   ============================================ */
+
 
 *,
 *::before,

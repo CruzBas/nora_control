@@ -4,7 +4,8 @@ export interface OrderItem {
     name: string;
     quantity: number;
     notes?: string;
-    receta_id?: string; // ID de la receta para descontar inventario automáticamente
+
+    receta_id?: string;
 }
 
 export interface Order {
@@ -48,7 +49,7 @@ export function useOrders() {
     const [error, setError] = useState<string | null>(null);
 
     const fetchOrders = async () => {
-        // TODO: Conectar con órdenes reales de Supabase
+
     };
 
     useEffect(() => {
@@ -56,10 +57,10 @@ export function useOrders() {
     }, []);
 
     const markAsCompleted = async (id: string) => {
-        // Buscar la orden para obtener sus ítems con receta_id
+
         const order = orders.find(o => o.id === id);
 
-        // Descontar inventario si los ítems tienen receta_id
+
         if (order) {
             const itemsWithReceta = order.items
                 .filter(item => item.receta_id)
@@ -74,14 +75,14 @@ export function useOrders() {
             }
         }
 
-        // Quitar la orden de la lista local
+
         setOrders(prev => prev.filter(order => order.id !== id));
     };
 
     return { orders, loading, error, refresh: fetchOrders, markAsCompleted };
 }
 
-//Inventario
+
 export interface Ingredient {
     id: string;
     name: string;
@@ -150,7 +151,6 @@ export function useInventory() {
 
     return { ingredients, loading, error, refresh: fetchInventory, deleteIngredient };
 }
-//Recetas
 
 import { getRecetasAction, getRecetaIngredientsAction, getRecetasForPOSAction } from '@/lib/actions/receta.actions';
 import { completeOrderAndDeductInventoryAction } from '@/lib/actions/orden.actions';
@@ -222,7 +222,7 @@ export function useRecipes() {
     };
 }
 
-// POS — productos disponibles para vender (recetas con al menos 1 ingrediente)
+
 export function usePOSProducts() {
     const [products, setProducts] = useState<Receta[]>([]);
     const [loading, setLoading] = useState(true);

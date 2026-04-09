@@ -38,14 +38,14 @@ export default function Home() {
           console.log('User ID from session:', session.user.id);
           console.log('User Email from session:', session.user.email);
 
-          // Profile no encontrado, redirigir al dashboard unificado
+
           router.push('/dashboardMaster');
           return;
         }
 
         const roleName = (profile.rol as any)?.nombre?.toLowerCase() || '';
 
-        // Todos los roles van al dashboard unificado
+
         router.push('/dashboardMaster');
       }
     } catch (err: any) {
@@ -57,7 +57,7 @@ export default function Home() {
 
   return (
     <main className="flex items-center justify-center min-h-dvh px-4 py-8 sm:px-6 bg-nora-blue-900">
-      {/* ── Card principal */}
+
       <div
         className="
           w-full max-w-md
@@ -74,7 +74,7 @@ export default function Home() {
           animate-in zoom-in-95 duration-500
         "
       >
-        {/* Efecto decorativo de fondo */}
+
         <div
           className="absolute -top-24 -right-24 w-48 h-48 rounded-full opacity-10 pointer-events-none"
           style={{ background: "var(--nora-accent-500)" }}
@@ -86,7 +86,7 @@ export default function Home() {
           aria-hidden="true"
         />
 
-        {/* ── Encabezado ── */}
+
         <div className="text-center mb-8 relative z-10">
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tighter mb-2">
             NÖRA{" "}
@@ -97,12 +97,12 @@ export default function Home() {
           </p>
         </div>
 
-        {/* ── Formulario ── */}
+
         <form
           onSubmit={handleLogin}
           className="space-y-5 pt-4 flex-1 relative z-10"
         >
-          {/* Campo: Correo */}
+
           <div>
             <label
               htmlFor="email"
@@ -134,7 +134,7 @@ export default function Home() {
             />
           </div>
 
-          {/* Campo: Contraseña */}
+
           <div>
             <label
               htmlFor="password"
@@ -166,14 +166,14 @@ export default function Home() {
             />
           </div>
 
-          {/* Mensaje de error */}
+
           {error && (
             <div className="p-4 bg-nora-danger/10 border border-nora-danger/20 text-nora-danger text-xs rounded-xl text-center font-medium animate-in fade-in slide-in-from-top-1 duration-300">
               {error}
             </div>
           )}
 
-          {/* Botón de envío */}
+
           <button
             type="submit"
             disabled={loading}
@@ -195,14 +195,14 @@ export default function Home() {
           </button>
         </form>
 
-        {/* Redes o Aux de login */}
+
         <div className="mt-6 flex justify-center gap-4 relative z-10">
           <p className="text-[10px] text-nora-gray-500 font-bold uppercase tracking-tighter">
             Utilice sus credenciales seleccionadas al registrarse
           </p>
         </div>
 
-        {/* ── Footer ── */}
+
         <div className="mt-8 text-center text-nora-gray-600 text-[10px] font-bold tracking-widest relative z-10 uppercase">
           &copy; 2026 NÖRA CONTROL CR
         </div>

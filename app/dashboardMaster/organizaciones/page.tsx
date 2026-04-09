@@ -11,7 +11,7 @@ import {
 } from '@/lib/actions/organizacion.actions';
 import { Organizacion, Empresa } from '@/lib/types';
 
-// ── Modal genérico ────────────────────────────────────────────────────────────
+
 function Modal({
     open,
     onClose,
@@ -49,7 +49,7 @@ function Modal({
     );
 }
 
-// ── Página principal ──────────────────────────────────────────────────────────
+
 export default function OrganizacionesPage() {
     const { usuario, loading: userLoading } = useUsuario();
     const [organizaciones, setOrganizaciones] = useState<Organizacion[]>([]);
@@ -58,9 +58,9 @@ export default function OrganizacionesPage() {
     const [procesando, setProcesando] = useState(false);
     const [toast, setToast] = useState<{ msg: string; tipo: 'success' | 'error' } | null>(null);
 
-    // Modal: nueva empresa (sucursal)
+
     const [modalNuevaEmpresa, setModalNuevaEmpresa] = useState<Organizacion | null>(null);
-    // Modal: editar empresa (sucursal)
+
     const [modalEditarEmpresa, setModalEditarEmpresa] = useState<Empresa | null>(null);
 
     const [formNombre, setFormNombre] = useState('');
@@ -92,7 +92,7 @@ export default function OrganizacionesPage() {
         if (!userLoading) fetchData();
     }, [userLoading, fetchData]);
 
-    // ── Crear nueva empresa/sucursal ──────────────────────────────────────────
+
     const handleCrearEmpresa = async () => {
         if (!modalNuevaEmpresa || !formNombre.trim()) return;
         setProcesando(true);
@@ -115,7 +115,7 @@ export default function OrganizacionesPage() {
         setProcesando(false);
     };
 
-    // ── Editar empresa/sucursal ───────────────────────────────────────────────
+
     const handleEditarEmpresa = async () => {
         if (!modalEditarEmpresa || !formNombre.trim()) return;
         setProcesando(true);
@@ -137,7 +137,7 @@ export default function OrganizacionesPage() {
         setProcesando(false);
     };
 
-    // ── Desvincular empresa de su organización ────────────────────────────────
+
     const handleDesvincular = async (empresaId: string, nombre: string) => {
         if (!confirm(`¿Desvincular "${nombre}" de esta organización?`)) return;
         setProcesando(true);
@@ -151,7 +151,7 @@ export default function OrganizacionesPage() {
         setProcesando(false);
     };
 
-    // ── Vincular empresa sin org a una organización ───────────────────────────
+
     const handleVincular = async (empresaId: string, orgId: string) => {
         setProcesando(true);
         const res = await asignarEmpresaAction(empresaId, orgId);
@@ -164,7 +164,7 @@ export default function OrganizacionesPage() {
         setProcesando(false);
     };
 
-    // ── Guards ────────────────────────────────────────────────────────────────
+
     if (userLoading || loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-nora-blue-900">
@@ -188,17 +188,16 @@ export default function OrganizacionesPage() {
         );
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
+
     return (
         <div className="flex flex-col min-h-screen bg-nora-blue-900">
 
-            {/* Toast */}
+
             {toast && (
-                <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl border font-semibold text-sm animate-in slide-in-from-top-2 duration-300 ${
-                    toast.tipo === 'success'
+                <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl border font-semibold text-sm animate-in slide-in-from-top-2 duration-300 ${toast.tipo === 'success'
                         ? 'bg-nora-success/15 border-nora-success/30 text-nora-success'
                         : 'bg-nora-danger/15 border-nora-danger/30 text-nora-danger'
-                }`}>
+                    }`}>
                     <span className="material-symbols-outlined text-[18px]">
                         {toast.tipo === 'success' ? 'check_circle' : 'error'}
                     </span>
@@ -208,7 +207,7 @@ export default function OrganizacionesPage() {
 
             <div className="p-6 md:p-8 space-y-8">
 
-                {/* ── Header ── */}
+
                 <div>
                     <div className="flex items-center gap-3 mb-1">
                         <div className="w-10 h-10 rounded-2xl bg-nora-accent-500/10 flex items-center justify-center">
@@ -223,7 +222,7 @@ export default function OrganizacionesPage() {
                     </p>
                 </div>
 
-                {/* ── Alerta: empresas sin organización ── */}
+
                 {empresasSinOrg.length > 0 && (
                     <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-3xl p-5">
                         <div className="flex items-center gap-2 mb-3">
@@ -258,7 +257,7 @@ export default function OrganizacionesPage() {
                     </div>
                 )}
 
-                {/* ── Estado vacío ── */}
+
                 {organizaciones.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-nora-blue-800/20 border-2 border-dashed border-nora-blue-700 rounded-3xl text-center">
                         <span className="material-symbols-outlined text-5xl text-nora-gray-600 mb-4">corporate_fare</span>
@@ -268,7 +267,7 @@ export default function OrganizacionesPage() {
                         </p>
                     </div>
                 ) : (
-                    /* ── Grid de organizaciones ── */
+
                     <div className="space-y-6">
                         {organizaciones.map((org) => {
                             const count = org.empresas?.length ?? 0;
@@ -277,7 +276,7 @@ export default function OrganizacionesPage() {
                                     key={org.id}
                                     className="bg-nora-blue-800/40 border border-nora-blue-700/50 rounded-3xl overflow-hidden"
                                 >
-                                    {/* Cabecera de la organización */}
+
                                     <div className="flex items-center justify-between px-6 py-4 bg-nora-blue-800/60 border-b border-nora-blue-700/40">
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-xl bg-nora-accent-500/15 flex items-center justify-center">
@@ -304,7 +303,7 @@ export default function OrganizacionesPage() {
                                         </button>
                                     </div>
 
-                                    {/* Lista de sucursales */}
+
                                     {count === 0 ? (
                                         <div className="px-6 py-8 text-center">
                                             <span className="material-symbols-outlined text-3xl text-nora-gray-700 mb-2 block">store</span>
@@ -328,12 +327,12 @@ export default function OrganizacionesPage() {
                                                     key={emp.id}
                                                     className="flex items-center gap-4 px-6 py-4 hover:bg-nora-blue-700/20 transition-all group"
                                                 >
-                                                    {/* Número */}
+
                                                     <div className="w-7 h-7 rounded-lg bg-nora-blue-700/60 flex items-center justify-center flex-shrink-0">
                                                         <span className="text-xs font-black text-nora-gray-500">{idx + 1}</span>
                                                     </div>
 
-                                                    {/* Info */}
+
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-nora-gray-100 font-bold text-sm truncate">{emp.nombre}</p>
                                                         {(emp.pais || emp.ubicacion) && (
@@ -344,7 +343,7 @@ export default function OrganizacionesPage() {
                                                         )}
                                                     </div>
 
-                                                    {/* Acciones */}
+
                                                     <div className="flex items-center gap-2">
                                                         {emp.pais && (
                                                             <span className="px-2 py-0.5 bg-nora-info/10 border border-nora-info/20 text-nora-info text-[11px] font-bold rounded-lg">
@@ -383,7 +382,7 @@ export default function OrganizacionesPage() {
                 )}
             </div>
 
-            {/* ── Modal: Nueva Sucursal ── */}
+
             <Modal
                 open={!!modalNuevaEmpresa}
                 onClose={() => setModalNuevaEmpresa(null)}
@@ -456,7 +455,7 @@ export default function OrganizacionesPage() {
                 </div>
             </Modal>
 
-            {/* ── Modal: Editar Sucursal ── */}
+
             <Modal
                 open={!!modalEditarEmpresa}
                 onClose={() => setModalEditarEmpresa(null)}

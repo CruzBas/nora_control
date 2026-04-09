@@ -46,16 +46,16 @@ export default function AccesoDenegadoModal({
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
-            {/* Overlay */}
+
             <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                 onClick={handleClose}
             />
 
-            {/* Modal */}
+
             <div className="relative w-full max-w-md mx-4 bg-nora-blue-800 border border-nora-blue-700/50 rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-300">
                 {enviado ? (
-                    /* ── Estado: Solicitud enviada ── */
+
                     <div className="text-center py-4">
                         <div className="w-16 h-16 mx-auto mb-4 bg-nora-success/10 rounded-full flex items-center justify-center">
                             <span className="material-symbols-outlined text-nora-success text-3xl">
@@ -77,7 +77,7 @@ export default function AccesoDenegadoModal({
                         </button>
                     </div>
                 ) : (
-                    /* ── Estado: Formulario de solicitud ── */
+
                     <>
                         <div className="text-center mb-6">
                             <div className="w-16 h-16 mx-auto mb-4 bg-yellow-500/10 rounded-full flex items-center justify-center">

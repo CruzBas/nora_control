@@ -96,7 +96,7 @@ export class OrganizacionService extends BaseService {
         }
     }
 
-    /** Crea una nueva empresa y la vincula a una organización. */
+
     async createEmpresa(
         nombre: string,
         organizacionId: string,
@@ -122,7 +122,7 @@ export class OrganizacionService extends BaseService {
         }
     }
 
-    /** Actualiza datos de una empresa. */
+
     async updateEmpresa(
         id: string,
         fields: { nombre?: string; pais?: string | null; ubicacion?: string | null; organizacion_id?: string | null }

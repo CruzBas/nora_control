@@ -2,16 +2,14 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-/**
- * Crea una solicitud de acceso temporal para una página.
- */
+
 export async function crearSolicitudAction(pagina: string, motivo: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) return { success: false, error: 'No autenticado' };
 
-    // Verificar que no exista ya una solicitud pendiente para esta página
+
     const { data: existente } = await supabase
         .from('solicitud_acceso')
         .select('id')
@@ -36,9 +34,7 @@ export async function crearSolicitudAction(pagina: string, motivo: string) {
     return { success: true, error: null };
 }
 
-/**
- * Lista todas las solicitudes (para Master/Admin).
- */
+
 export async function listarSolicitudesAction() {
     const supabase = await createClient();
 
@@ -51,10 +47,7 @@ export async function listarSolicitudesAction() {
     return { success: true, data, error: null };
 }
 
-/**
- * Aprueba una solicitud y establece la expiración del acceso temporal.
- * @param duracionHoras - Duración en horas del acceso temporal.
- */
+
 export async function aprobarSolicitudAction(solicitudId: string, duracionHoras: number) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -78,9 +71,7 @@ export async function aprobarSolicitudAction(solicitudId: string, duracionHoras:
     return { success: true, error: null };
 }
 
-/**
- * Rechaza una solicitud.
- */
+
 export async function rechazarSolicitudAction(solicitudId: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -100,9 +91,7 @@ export async function rechazarSolicitudAction(solicitudId: string) {
     return { success: true, error: null };
 }
 
-/**
- * Verifica si el usuario actual tiene acceso temporal vigente a una página.
- */
+
 export async function verificarAccesoTemporalAction(pagina: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

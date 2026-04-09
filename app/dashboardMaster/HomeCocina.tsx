@@ -119,7 +119,7 @@ export default function HomeCocina() {
                 )}
             </div>
 
-            {/* Modal detalle de orden */}
+
             {selectedOrden && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-nora-blue-900/80 backdrop-blur-sm" onClick={() => setSelectedOrden(null)} />

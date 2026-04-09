@@ -47,7 +47,7 @@ export default function PagarOrdenModal({ orden, onClose, onSuccess }: PagarOrde
     return (
         <div className="fixed inset-0 bg-nora-blue-900/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
             <div className="bg-nora-blue-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-nora-blue-700 overflow-hidden animate-in zoom-in duration-300">
-                {/* Header */}
+
                 <div className="p-8 text-center border-b border-nora-blue-700 bg-nora-blue-900/50 relative">
                     <button onClick={onClose} className="absolute top-6 right-6 p-2 text-nora-gray-500 hover:text-nora-white hover:bg-nora-blue-700 rounded-full transition-all">
                         <XMarkIcon className="h-5 w-5" />

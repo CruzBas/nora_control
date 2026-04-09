@@ -6,7 +6,6 @@ export interface BaseEntity {
     updated_at?: string;
 }
 
-// ── Organizacion & Empresa ────────────────────────────────────
 
 export interface Organizacion extends BaseEntity {
     nombre: string;
@@ -61,7 +60,6 @@ export interface RecetaProducto extends BaseEntity {
     inventario?: Inventario;
 }
 
-// ── Órdenes ──────────────────────────────────────────────────
 
 export type OrdenEstado = 'pendiente' | 'lista' | 'pagada' | 'cancelada';
 export type MetodoPago = 'efectivo' | 'tarjeta' | 'sinpe' | 'otro';
@@ -86,7 +84,6 @@ export interface Orden extends BaseEntity {
     items?: OrdenItem[];
 }
 
-// ── Cierre de Caja ────────────────────────────────────────────
 
 export interface CierreCaja extends BaseEntity {
     empresa_id: string;

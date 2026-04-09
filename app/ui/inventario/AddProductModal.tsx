@@ -60,7 +60,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                     </div>
                 )}
 
-                {/* Nombre */}
+
                 <div>
                     <label className={LABEL_CLASS}>Nombre del Producto</label>
                     <input
@@ -71,7 +71,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                     />
                 </div>
 
-                {/* Precio y Categoría en fila */}
+
                 <div className="grid grid-cols-2 gap-3">
                     <div>
                         <label className={LABEL_CLASS}>Precio (₡)</label>

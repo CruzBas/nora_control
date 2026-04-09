@@ -25,7 +25,7 @@ export default function CheckoutModal({ isOpen, onClose, onFinish, total, loadin
     return (
         <div className="fixed inset-0 bg-nora-blue-900/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
             <div className="bg-nora-blue-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-nora-blue-700 overflow-hidden animate-in zoom-in duration-300">
-                {/* Header */}
+
                 <div className="p-8 text-center border-b border-nora-blue-700 bg-nora-blue-900/50 relative">
                     <button
                         onClick={onClose}
@@ -41,7 +41,7 @@ export default function CheckoutModal({ isOpen, onClose, onFinish, total, loadin
                 </div>
 
                 <div className="p-8 space-y-5">
-                    {/* Nombre del cliente */}
+
                     <div>
                         <label className="block text-xs font-black text-nora-gray-400 uppercase tracking-widest mb-2">
                             Nombre del Cliente (opcional)
@@ -56,7 +56,7 @@ export default function CheckoutModal({ isOpen, onClose, onFinish, total, loadin
                         />
                     </div>
 
-                    {/* Observaciones */}
+
                     <div>
                         <label className="block text-xs font-black text-nora-gray-400 uppercase tracking-widest mb-2">
                             Observaciones <span className="text-nora-gray-600 font-normal normal-case tracking-normal">(sin cebolla, sin picante, etc.)</span>
@@ -75,7 +75,7 @@ export default function CheckoutModal({ isOpen, onClose, onFinish, total, loadin
                     </p>
                 </div>
 
-                {/* Footer */}
+
                 <div className="p-6 bg-nora-blue-900/50 flex space-x-4">
                     <button
                         onClick={onClose}

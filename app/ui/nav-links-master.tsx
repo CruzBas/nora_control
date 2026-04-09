@@ -54,22 +54,22 @@ export default function NavLinksMaster({ onLinkClick }: NavLinksMasterProps) {
     const lockedLinkClasses =
         'text-nora-gray-500 hover:bg-nora-blue-700/30 hover:text-nora-gray-400 cursor-pointer';
 
-    // Filtrar links visibles según el rol
+
     const visibleLinks = allLinks.filter(link => {
         const acceso = tieneAcceso(rol, link.pagina);
-        return acceso !== undefined; // undefined = oculto
+        return acceso !== undefined;
     });
 
     const handleLinkClick = (e: React.MouseEvent, link: LinkItem) => {
         const acceso = tieneAcceso(rol, link.pagina);
 
-        // Si tiene acceso directo o temporal, navegar normalmente
+
         if (acceso === true || tieneAccesoTemporal(link.pagina)) {
             onLinkClick?.();
             return;
         }
 
-        // Si no tiene acceso, prevenir navegación y abrir modal
+
         e.preventDefault();
         setModalPagina({ pagina: link.pagina, label: link.name });
         setModalOpen(true);
@@ -77,7 +77,7 @@ export default function NavLinksMaster({ onLinkClick }: NavLinksMasterProps) {
 
     return (
         <>
-            {/* ── Main links ── */}
+
             <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto">
                 {visibleLinks.map((link) => {
                     const acceso = tieneAcceso(rol, link.pagina);
@@ -116,7 +116,7 @@ export default function NavLinksMaster({ onLinkClick }: NavLinksMasterProps) {
                 })}
             </nav>
 
-            {/* ── Bottom links ── */}
+
             <div className="px-4 pb-2 space-y-1 border-t border-nora-blue-700/50 pt-3">
                 {bottomLinks.map((link) => (
                     <Link
@@ -139,7 +139,7 @@ export default function NavLinksMaster({ onLinkClick }: NavLinksMasterProps) {
                 ))}
             </div>
 
-            {/* ── Modal de acceso denegado ── */}
+
             <AccesoDenegadoModal
                 isOpen={modalOpen}
                 pagina={modalPagina.pagina}

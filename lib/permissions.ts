@@ -1,7 +1,3 @@
-/**
- * Configuración centralizada de permisos por rol.
- * Define qué páginas puede acceder cada rol dentro del dashboard.
- */
 
 export type Pagina =
     | 'home'
@@ -18,7 +14,7 @@ export type Pagina =
 
 export type RolNombre = 'Master' | 'Admin' | 'Cajero' | 'Cocina';
 
-/** Mapa de permisos: true = acceso, false = puede solicitar, undefined = oculto */
+
 export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = {
     Master: {
         home: true,

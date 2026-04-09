@@ -63,10 +63,7 @@ export async function removeIngredientFromRecetaAction(id: string): Promise<ApiR
     return response;
 }
 
-/**
- * Trae solo las recetas que tienen al menos un ingrediente vinculado.
- * Estas son las que están listas para mostrarse en el POS.
- */
+
 export async function getRecetasForPOSAction(): Promise<ApiResponse<Receta[]>> {
     return await recetaService.getAllForPOS();
 }

@@ -86,7 +86,7 @@ export default function SolicitudesPage() {
     return (
         <div className="flex flex-col min-h-screen bg-nora-blue-900">
             <div className="p-6 md:p-8 space-y-8">
-                {/* Header */}
+
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-black text-nora-gray-100 tracking-tight">
@@ -118,13 +118,13 @@ export default function SolicitudesPage() {
                     </div>
                 </div>
 
-                {/* Loading */}
+
                 {loading ? (
                     <div className="flex justify-center py-20">
                         <div className="w-8 h-8 border-2 border-nora-accent-500 border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : solicitudesFiltradas.length === 0 ? (
-                    /* Empty state */
+
                     <div className="flex flex-col items-center justify-center py-20 bg-nora-blue-800/20 border-2 border-dashed border-nora-blue-700 rounded-3xl text-center">
                         <span className="text-5xl mb-4">✅</span>
                         <p className="text-nora-gray-400 font-bold text-xl">
@@ -135,7 +135,7 @@ export default function SolicitudesPage() {
                         </p>
                     </div>
                 ) : (
-                    /* Lista de solicitudes */
+
                     <div className="space-y-4">
                         {solicitudesFiltradas.map((sol) => (
                             <div
@@ -143,7 +143,7 @@ export default function SolicitudesPage() {
                                 className="bg-nora-blue-800/40 border border-nora-blue-700/50 rounded-3xl p-5 transition-all"
                             >
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    {/* Info */}
+
                                     <div className="flex-1 space-y-2">
                                         <div className="flex items-center gap-3 flex-wrap">
                                             <span className="font-black text-nora-gray-100">
@@ -183,7 +183,7 @@ export default function SolicitudesPage() {
                                         </p>
                                     </div>
 
-                                    {/* Acciones */}
+
                                     {sol.estado === 'pendiente' && (
                                         <div className="flex items-center gap-2 flex-wrap">
                                             {DURACIONES.map((d) => (

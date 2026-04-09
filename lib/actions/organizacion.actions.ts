@@ -2,7 +2,7 @@
 
 import { organizacionService } from '@/lib/services/organizacion.service';
 
-/** Guard: returns error if user is not Master/Admin */
+
 async function requireAdmin() {
     const esAdmin = await organizacionService.verificarRolAdmin();
     if (!esAdmin) {
@@ -11,21 +11,21 @@ async function requireAdmin() {
     return null;
 }
 
-/** Lista todas las organizaciones con sus empresas. */
+
 export async function listarOrganizacionesAction() {
     const denied = await requireAdmin();
     if (denied) return denied;
     return organizacionService.getOrganizaciones();
 }
 
-/** Lista todas las empresas disponibles. */
+
 export async function listarEmpresasAction() {
     const denied = await requireAdmin();
     if (denied) return denied;
     return organizacionService.getEmpresas();
 }
 
-/** Crea una nueva organización. */
+
 export async function crearOrganizacionAction(nombre: string) {
     const denied = await requireAdmin();
     if (denied) return denied;
@@ -37,7 +37,7 @@ export async function crearOrganizacionAction(nombre: string) {
     return organizacionService.createOrganizacion(nombre.trim());
 }
 
-/** Actualiza el nombre de una organización. */
+
 export async function actualizarOrganizacionAction(id: string, nombre: string) {
     const denied = await requireAdmin();
     if (denied) return denied;
@@ -49,7 +49,7 @@ export async function actualizarOrganizacionAction(id: string, nombre: string) {
     return organizacionService.updateOrganizacion(id, nombre.trim());
 }
 
-/** Elimina una organización. */
+
 export async function eliminarOrganizacionAction(id: string) {
     const denied = await requireAdmin();
     if (denied) return denied;
@@ -61,7 +61,7 @@ export async function eliminarOrganizacionAction(id: string) {
     return organizacionService.deleteOrganizacion(id);
 }
 
-/** Crea una nueva empresa y la vincula a una organización. */
+
 export async function crearEmpresaAction(
     nombre: string,
     organizacionId: string,

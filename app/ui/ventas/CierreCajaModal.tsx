@@ -112,7 +112,7 @@ export default function CierreCajaModal({ isOpen, onClose }: CierreCajaModalProp
     return (
         <div className="fixed inset-0 bg-nora-blue-900/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
             <div className="bg-nora-blue-800 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-nora-blue-700 overflow-hidden animate-in zoom-in duration-300">
-                {/* Header */}
+
                 <div className="p-6 border-b border-nora-blue-700 flex items-center justify-between bg-nora-blue-900/40">
                     <div>
                         <h3 className="text-xl font-black text-nora-white uppercase tracking-tight">Cierre de Caja</h3>

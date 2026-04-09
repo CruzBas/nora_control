@@ -40,7 +40,7 @@ export default function HomeCajero() {
         <div className="flex flex-col min-h-screen bg-nora-blue-900">
             <div className="p-6 md:p-8 space-y-8">
 
-                {/* Header */}
+
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-black text-nora-gray-100 tracking-tight">Órdenes</h1>
@@ -66,7 +66,7 @@ export default function HomeCajero() {
                     </div>
                 </div>
 
-                {/* Listas para cobrar */}
+
                 {listas.length > 0 && (
                     <div className="space-y-3">
                         <h2 className="text-xs font-black text-nora-success uppercase tracking-widest flex items-center gap-2">
@@ -101,7 +101,7 @@ export default function HomeCajero() {
                     </div>
                 )}
 
-                {/* En cocina */}
+
                 <div className="space-y-3">
                     <h2 className="text-xs font-black text-yellow-400 uppercase tracking-widest flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
@@ -140,14 +140,14 @@ export default function HomeCajero() {
                 </div>
             </div>
 
-            {/* Modal cobrar */}
+
             <PagarOrdenModal
                 orden={pagarOrden}
                 onClose={() => setPagarOrden(null)}
                 onSuccess={() => { setPagarOrden(null); refresh(); }}
             />
 
-            {/* Modal cierre de caja */}
+
             <CierreCajaModal isOpen={cierreOpen} onClose={() => setCierreOpen(false)} />
         </div>
     );

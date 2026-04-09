@@ -28,7 +28,7 @@ export function useOrdenes() {
 
     useEffect(() => {
         fetchOrdenes();
-        // Polling cada 15 segundos para actualizar estado en tiempo real
+
         const interval = setInterval(fetchOrdenes, 15000);
         return () => clearInterval(interval);
     }, [fetchOrdenes]);
