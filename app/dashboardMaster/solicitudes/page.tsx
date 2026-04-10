@@ -33,7 +33,6 @@ const PAGINA_LABELS: Record<string, string> = {
     home: 'Inicio',
     orden: 'Orden / POS',
     cocina: 'Cocina',
-    facturas: 'Facturas',
     inventario: 'Inventario',
     reportes: 'Reportes',
     admin: 'Panel Admin',
