@@ -3,14 +3,18 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useOrdenes } from '@/lib/hooks/useOrdenes';
+import { useClientesFiscales } from '@/lib/hooks/useClientesFiscales';
 import { Orden } from '@/lib/types';
 import PagarOrdenModal from '@/app/ui/ventas/PagarOrdenModal';
 import CierreCajaModal from '@/app/ui/ventas/CierreCajaModal';
+import EmitirFacturaModal from '@/app/ui/facturacion/EmitirFacturaModal';
 
 
 export default function FacturasPage() {
     const { ordenes, refresh } = useOrdenes();
+    const { clientes } = useClientesFiscales();
     const [pagarOrden, setPagarOrden] = useState<Orden | null>(null);
+    const [facturarOrden, setFacturarOrden] = useState<Orden | null>(null);
     const [cierreOpen, setCierreOpen] = useState(false);
 
     const pendientes = ordenes.filter(o => o.estado === 'pendiente');
@@ -69,10 +73,9 @@ export default function FacturasPage() {
                         </h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {listas.map(orden => (
-                                <button
+                                <div
                                     key={orden.id}
-                                    onClick={() => setPagarOrden(orden)}
-                                    className="text-left bg-nora-success/5 hover:bg-nora-success/10 border-2 border-nora-success/40 hover:border-nora-success/70 rounded-3xl p-5 transition-all active:scale-95 group"
+                                    className="text-left bg-nora-success/5 hover:bg-nora-success/10 border-2 border-nora-success/40 hover:border-nora-success/70 rounded-3xl p-5 transition-all group"
                                 >
                                     <div className="flex justify-between items-start mb-3">
                                         <span className="text-2xl">✅</span>
@@ -86,10 +89,22 @@ export default function FacturasPage() {
                                     <p className="text-nora-gray-500 text-xs mt-1">
                                         {(orden.items ?? []).length} ítems · {new Date(orden.created_at).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
                                     </p>
-                                    <div className="mt-3 w-full py-2 bg-nora-success text-white text-xs font-black rounded-xl text-center tracking-widest uppercase">
-                                        Cobrar
+                                    <div className="mt-3 flex gap-2">
+                                        <button
+                                            onClick={() => setPagarOrden(orden)}
+                                            className="flex-1 py-2 bg-nora-success text-white text-xs font-black rounded-xl text-center tracking-widest uppercase active:scale-95 transition-all"
+                                        >
+                                            Cobrar
+                                        </button>
+                                        <button
+                                            onClick={() => setFacturarOrden(orden)}
+                                            className="py-2 px-3 bg-nora-accent-500/20 text-nora-accent-400 border border-nora-accent-500/30 text-xs font-bold rounded-xl text-center hover:bg-nora-accent-500/30 active:scale-95 transition-all"
+                                            title="Emitir Factura Electrónica"
+                                        >
+                                            <span className="material-symbols-outlined text-sm">receipt_long</span>
+                                        </button>
                                     </div>
-                                </button>
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -143,6 +158,13 @@ export default function FacturasPage() {
 
 
             <CierreCajaModal isOpen={cierreOpen} onClose={() => setCierreOpen(false)} />
+
+            <EmitirFacturaModal
+                orden={facturarOrden}
+                clientes={clientes}
+                onClose={() => setFacturarOrden(null)}
+                onSuccess={() => { setFacturarOrden(null); refresh(); }}
+            />
         </div>
     )
 }

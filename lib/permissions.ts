@@ -4,6 +4,7 @@ export type Pagina =
     | 'orden'
     | 'cocina'
     | 'facturas'
+    | 'facturacion'
     | 'inventario'
     | 'reportes'
     | 'proveedores'
@@ -21,6 +22,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         orden: true,
         cocina: true,
         facturas: true,
+        facturacion: true,
         inventario: true,
         reportes: true,
         admin: true,
@@ -34,6 +36,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         orden: true,
         cocina: true,
         facturas: true,
+        facturacion: true,
         inventario: true,
         reportes: true,
         admin: true,
@@ -47,6 +50,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         orden: true,
         cocina: false,
         facturas: true,
+        facturacion: false,
         inventario: true,
         reportes: false,
         admin: false,
@@ -60,6 +64,7 @@ export const PERMISOS: Record<RolNombre, Record<Pagina, boolean | undefined>> = 
         orden: false,
         cocina: true,
         facturas: false,
+        facturacion: false,
         inventario: true,
         reportes: false,
         proveedores: false,
@@ -76,6 +81,7 @@ export const RUTA_A_PAGINA: Record<string, Pagina> = {
     '/dashboardMaster/ventas': 'orden',
     '/dashboardMaster/cocina': 'cocina',
     '/dashboardMaster/facturas': 'facturas',
+    '/dashboardMaster/facturacion': 'facturacion',
     '/dashboardMaster/inventario': 'inventario',
     '/dashboardMaster/reportes': 'reportes',
     '/dashboardMaster/admin': 'admin',
