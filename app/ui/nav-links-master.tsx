@@ -18,8 +18,6 @@ const allLinks: LinkItem[] = [
     { name: 'Inicio', href: '/dashboardMaster', icon: 'home', pagina: 'home' },
     { name: 'Orden', href: '/dashboardMaster/ventas', icon: 'receipt_long', pagina: 'orden' },
     { name: 'Cocina', href: '/dashboardMaster/cocina', icon: 'kitchen', pagina: 'cocina' },
-    { name: 'Facturas', href: '/dashboardMaster/facturas', icon: 'receipt', pagina: 'facturas' },
-    { name: 'Facturación E.', href: '/dashboardMaster/facturacion', icon: 'receipt_long', pagina: 'facturacion' },
     { name: 'Inventario', href: '/dashboardMaster/inventario', icon: 'inventory_2', pagina: 'inventario' },
     { name: 'Reportes', href: '/dashboardMaster/reportes', icon: 'bar_chart', pagina: 'reportes' },
     { name: 'Proveedores', href: '/dashboardMaster/proveedores', icon: 'inventory', pagina: 'proveedores' },

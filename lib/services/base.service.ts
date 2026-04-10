@@ -48,9 +48,25 @@ export abstract class BaseService {
 
     protected handleError<T>(error: any): ApiResponse<T> {
         console.error(`[Service Exception]:`, error);
+        
+        let errorMsg = 'Excepción desconocida';
+        if (typeof error === 'string') {
+            errorMsg = error;
+        } else if (error instanceof Error) {
+            errorMsg = error.message;
+        } else if (error && typeof error === 'object' && error.message) {
+            errorMsg = error.message; // Covers Supabase Error format
+        } else if (error && typeof error === 'object') {
+            try {
+                errorMsg = JSON.stringify(error);
+            } catch (e) {
+                errorMsg = 'Error object could not be stringified';
+            }
+        }
+
         return {
             data: null,
-            error: error instanceof Error ? error.message : 'Excepción desconocida',
+            error: errorMsg,
             success: false,
         };
     }
