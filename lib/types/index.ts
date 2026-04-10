@@ -62,7 +62,7 @@ export interface RecetaProducto extends BaseEntity {
 
 
 export type OrdenEstado = 'pendiente' | 'lista' | 'pagada' | 'cancelada';
-export type MetodoPago = 'efectivo' | 'tarjeta' | 'sinpe' | 'otro';
+export type MetodoPago = 'efectivo' | 'tarjeta' | 'sinpe' | 'otro' | 'mixto';
 
 export interface OrdenItem extends BaseEntity {
     orden_id: string;
@@ -70,6 +70,7 @@ export interface OrdenItem extends BaseEntity {
     nombre: string;
     precio: number;
     cantidad: number;
+    requiere_cocina: boolean;
 }
 
 export interface Orden extends BaseEntity {
@@ -78,6 +79,8 @@ export interface Orden extends BaseEntity {
     estado: OrdenEstado;
     metodo_pago: MetodoPago | null;
     observaciones: string | null;
+    pagos?: Record<string, number> | null;
+    tiempo_preparacion_minutos?: number | null;
     subtotal: number;
     impuesto: number;
     total: number;

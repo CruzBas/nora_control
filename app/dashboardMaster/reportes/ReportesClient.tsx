@@ -9,7 +9,7 @@ import ReportsRevenueChart from '@/app/ui/reportes/ReportsRevenueChart';
 import { getReporteAction } from '@/lib/actions/ordenes.actions';
 
 interface ReportData {
-    kpis: { revenue: number, salesCount: number, avgTicket: number };
+    kpis: { revenue: number, salesCount: number, avgTicket: number, avgPrepTime: number };
     topProducts: { name: string, quantity: number, revenue: number }[];
     chartData: { name: string, value: number }[];
 }
@@ -64,9 +64,9 @@ export default function ReportesClient() {
         csvRows.push('');
 
 
-        csvRows.push(`Ingresos Totales (Colones),Ventas Realizadas,Ticket Promedio (Colones)`);
+        csvRows.push(`Ingresos Totales (Colones),Ventas Realizadas,Ticket Promedio (Colones),Tiempo Prep. Promedio (Min)`);
 
-        csvRows.push(`${data.kpis.revenue},${data.kpis.salesCount},${data.kpis.avgTicket.toFixed(2)}`);
+        csvRows.push(`${data.kpis.revenue},${data.kpis.salesCount},${data.kpis.avgTicket.toFixed(2)},${data.kpis.avgPrepTime.toFixed(1)}`);
         csvRows.push('');
 
 
@@ -131,6 +131,7 @@ export default function ReportesClient() {
                             revenue={fmt(data.kpis.revenue)}
                             salesCount={String(data.kpis.salesCount)}
                             avgTicket={fmt(data.kpis.avgTicket)}
+                            avgPrepTime={`${data.kpis.avgPrepTime.toFixed(1)} min`}
                         />
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

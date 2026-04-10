@@ -15,6 +15,10 @@ export async function getOrdenesTerminadasHoyAction(): Promise<ApiResponse<Orden
     return ordenService.getTerminadasHoy();
 }
 
+export async function getPagadasHoyAction(): Promise<ApiResponse<Orden[]>> {
+    return ordenService.getPagadasHoy();
+}
+
 
 export async function getDashboardStatsAction() {
     return ordenService.getDashboardStats();
@@ -63,8 +67,8 @@ export async function marcarOrdenListaAction(ordenId: string, itemsParaDescontar
 }
 
 
-export async function pagarOrdenAction(ordenId: string, metodoPago: MetodoPago): Promise<ApiResponse<Orden>> {
-    const response = await ordenService.pagar(ordenId, metodoPago);
+export async function pagarOrdenAction(ordenId: string, metodoPago: MetodoPago, pagos?: Record<string, number>): Promise<ApiResponse<Orden>> {
+    const response = await ordenService.pagar(ordenId, metodoPago, pagos);
     if (response.success) {
         revalidatePath('/dashboardCajero');
         revalidatePath('/dashboardCajero/ventas');

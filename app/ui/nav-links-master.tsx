@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useUsuario } from '@/lib/hooks/useUsuario';
 import { tieneAcceso, rutaAPagina, type Pagina } from '@/lib/permissions';
 import AccesoDenegadoModal from './common/AccesoDenegadoModal';
+import UpgradePlanModal from './common/UpgradePlanModal';
 
 interface LinkItem {
     name: string;
@@ -17,6 +18,7 @@ interface LinkItem {
 const allLinks: LinkItem[] = [
     { name: 'Inicio', href: '/dashboardMaster', icon: 'home', pagina: 'home' },
     { name: 'Orden', href: '/dashboardMaster/ventas', icon: 'receipt_long', pagina: 'orden' },
+    { name: 'Facturación', href: '/dashboardMaster/factura', icon: 'payments', pagina: 'factura' },
     { name: 'Cocina', href: '/dashboardMaster/cocina', icon: 'kitchen', pagina: 'cocina' },
     { name: 'Inventario', href: '/dashboardMaster/inventario', icon: 'inventory_2', pagina: 'inventario' },
     { name: 'Reportes', href: '/dashboardMaster/reportes', icon: 'bar_chart', pagina: 'reportes' },
@@ -38,9 +40,11 @@ export default function NavLinksMaster({ onLinkClick }: NavLinksMasterProps) {
     const pathname = usePathname();
     const { usuario, tieneAccesoTemporal } = useUsuario();
     const [modalOpen, setModalOpen] = useState(false);
+    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
     const [modalPagina, setModalPagina] = useState<{ pagina: string; label: string }>({ pagina: '', label: '' });
 
     const rol = usuario?.rol || 'Cajero';
+    const suscripcion = usuario?.suscripcion;
 
     const isActive = (href: string) => pathname === href;
 
@@ -55,15 +59,15 @@ export default function NavLinksMaster({ onLinkClick }: NavLinksMasterProps) {
 
 
     const visibleLinks = allLinks.filter(link => {
-        const acceso = tieneAcceso(rol, link.pagina);
-        return acceso !== undefined;
+        const { tiene } = tieneAcceso(rol, link.pagina, suscripcion);
+        return tiene !== undefined;
     });
 
     const handleLinkClick = (e: React.MouseEvent, link: LinkItem) => {
-        const acceso = tieneAcceso(rol, link.pagina);
+        const { tiene, motivo } = tieneAcceso(rol, link.pagina, suscripcion);
 
 
-        if (acceso === true || tieneAccesoTemporal(link.pagina)) {
+        if (tiene === true || tieneAccesoTemporal(link.pagina)) {
             onLinkClick?.();
             return;
         }
@@ -71,7 +75,12 @@ export default function NavLinksMaster({ onLinkClick }: NavLinksMasterProps) {
 
         e.preventDefault();
         setModalPagina({ pagina: link.pagina, label: link.name });
-        setModalOpen(true);
+        
+        if (motivo === 'suscripcion') {
+            setUpgradeModalOpen(true);
+        } else {
+            setModalOpen(true);
+        }
     };
 
     return (
@@ -79,8 +88,8 @@ export default function NavLinksMaster({ onLinkClick }: NavLinksMasterProps) {
 
             <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto">
                 {visibleLinks.map((link) => {
-                    const acceso = tieneAcceso(rol, link.pagina);
-                    const isLocked = acceso === false && !tieneAccesoTemporal(link.pagina);
+                    const { tiene } = tieneAcceso(rol, link.pagina, suscripcion);
+                    const isLocked = tiene === false && !tieneAccesoTemporal(link.pagina);
 
                     return (
                         <Link
@@ -144,6 +153,12 @@ export default function NavLinksMaster({ onLinkClick }: NavLinksMasterProps) {
                 pagina={modalPagina.pagina}
                 paginaLabel={modalPagina.label}
                 onClose={() => setModalOpen(false)}
+            />
+
+            <UpgradePlanModal
+                isOpen={upgradeModalOpen}
+                paginaLabel={modalPagina.label}
+                onClose={() => setUpgradeModalOpen(false)}
             />
         </>
     );

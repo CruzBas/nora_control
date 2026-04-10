@@ -9,9 +9,9 @@ export interface UsuarioInfo {
     apellido: string | null;
     email: string | null;
     empresa_id: string;
-
     rol: string;
     rol_id: string;
+    suscripcion: string | null;
 }
 
 export interface AccesoTemporal {
@@ -38,7 +38,7 @@ export function useUsuario() {
 
             const { data: profile } = await supabase
                 .from('usuario')
-                .select('*, rol(nombre)')
+                .select('*, rol(nombre), empresa(organizacion(suscripcion(nombre)))')
                 .eq('id', user.id)
                 .maybeSingle();
 
@@ -51,6 +51,12 @@ export function useUsuario() {
                     empresa_id: profile.empresa_id,
                     rol: (profile.rol as any)?.nombre || 'Cajero',
                     rol_id: profile.rol_id,
+                    suscripcion: (() => {
+                        const empresa: any = Array.isArray(profile.empresa) ? profile.empresa[0] : profile.empresa;
+                        const organizacion = Array.isArray(empresa?.organizacion) ? empresa?.organizacion[0] : empresa?.organizacion;
+                        const suscripcion = Array.isArray(organizacion?.suscripcion) ? organizacion?.suscripcion[0] : organizacion?.suscripcion;
+                        return suscripcion?.nombre?.trim() || null;
+                    })(),
                 });
 
 

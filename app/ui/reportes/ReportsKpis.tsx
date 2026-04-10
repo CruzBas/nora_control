@@ -4,15 +4,17 @@ interface ReportsKpisProps {
     revenue?: string;
     salesCount?: string;
     avgTicket?: string;
+    avgPrepTime?: string;
 }
 
 export default function ReportsKpis({
-    revenue = '₡120,000.00',
-    salesCount = '42',
-    avgTicket = '₡2,986.42',
+    revenue = '₡0.00',
+    salesCount = '0',
+    avgTicket = '₡0.00',
+    avgPrepTime = '0 min',
 }: ReportsKpisProps) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             <MetricCard
                 title="Ingresos Totales"
                 value={revenue}
@@ -33,6 +35,13 @@ export default function ReportsKpis({
                 icon="receipt_long"
                 iconColorClass="text-nora-info"
                 iconBgClass="bg-nora-info/10"
+            />
+            <MetricCard
+                title="Tiempo Cocina (Prom)"
+                value={avgPrepTime}
+                icon="timer"
+                iconColorClass="text-yellow-400"
+                iconBgClass="bg-yellow-400/10"
             />
         </div>
     );

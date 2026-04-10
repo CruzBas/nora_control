@@ -42,6 +42,25 @@ export class OrdenService extends BaseService {
         }
     }
 
+    async getPagadasHoy(): Promise<ApiResponse<Orden[]>> {
+        try {
+            const supabase = await this.getSupabase();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const { data, error } = await supabase
+                .from(this.ordenTable)
+                .select(`*, items:orden_item(*)`)
+                .eq('estado', 'pagada')
+                .gte('updated_at', today.toISOString())
+                .order('updated_at', { ascending: false });
+
+            return this.handleResponse<Orden[]>(data as Orden[], error);
+        } catch (error) {
+            return this.handleError<Orden[]>(error);
+        }
+    }
+
 
     async create(
         clienteNombre: string,
@@ -99,6 +118,15 @@ export class OrdenService extends BaseService {
                 }
             }
 
+            // Check if any recipe requires kitchen prep
+            const { data: recipesData } = await supabase
+                .from('receta')
+                .select('id, requiere_cocina')
+                .in('id', recetaIds);
+            
+            const requiresKitchen = recipesData?.some(r => r.requiere_cocina) ?? true;
+            const estadoInicial = requiresKitchen ? 'pendiente' : 'lista';
+
 
 
             const { data: orden, error: ordenError } = await supabase
@@ -112,7 +140,7 @@ export class OrdenService extends BaseService {
                     impuesto,
                     total,
                     observaciones: observaciones || null,
-                    estado: 'pendiente',
+                    estado: estadoInicial,
                 })
                 .select()
                 .maybeSingle();
@@ -122,7 +150,17 @@ export class OrdenService extends BaseService {
             if (ordenError || !orden) return this.handleResponse<Orden>(null, ordenError);
 
 
-            const itemRows = items.map(i => ({ ...i, orden_id: orden.id }));
+            const itemRows = items.map(i => {
+                const recipe = (recipesData || []).find(r => r.id === i.receta_id);
+                return {
+                    orden_id: orden.id,
+                    receta_id: i.receta_id,
+                    nombre: i.nombre,
+                    precio: i.precio,
+                    cantidad: i.cantidad,
+                    requiere_cocina: recipe?.requiere_cocina ?? true
+                };
+            });
             const { error: itemsError } = await supabase.from(this.itemTable).insert(itemRows);
             if (itemsError) return this.handleResponse<Orden>(null, itemsError);
 
@@ -136,9 +174,19 @@ export class OrdenService extends BaseService {
     async updateEstado(id: string, estado: Orden['estado']): Promise<ApiResponse<Orden>> {
         try {
             const supabase = await this.getSupabase();
+            const dataToUpdate: any = { estado };
+
+            if (estado === 'lista') {
+                const { data: order } = await supabase.from(this.ordenTable).select('created_at').eq('id', id).single();
+                if (order && order.created_at) {
+                    const diffMs = Date.now() - new Date(order.created_at).getTime();
+                    dataToUpdate.tiempo_preparacion_minutos = Math.round(diffMs / 60000);
+                }
+            }
+
             const { data, error } = await supabase
                 .from(this.ordenTable)
-                .update({ estado })
+                .update(dataToUpdate)
                 .eq('id', id)
                 .select()
                 .maybeSingle();
@@ -222,12 +270,12 @@ export class OrdenService extends BaseService {
     }
 
 
-    async pagar(id: string, metodoPago: MetodoPago): Promise<ApiResponse<Orden>> {
+    async pagar(id: string, metodoPago: MetodoPago, pagos?: Record<string, number>): Promise<ApiResponse<Orden>> {
         try {
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.ordenTable)
-                .update({ estado: 'pagada', metodo_pago: metodoPago })
+                .update({ estado: 'pagada', metodo_pago: metodoPago, pagos })
                 .eq('id', id)
                 .select()
                 .maybeSingle();
@@ -268,10 +316,17 @@ export class OrdenService extends BaseService {
 
             for (const o of ordenes) {
                 totals.total_general += o.total;
-                if (o.metodo_pago === 'efectivo') totals.total_efectivo += o.total;
-                else if (o.metodo_pago === 'tarjeta') totals.total_tarjeta += o.total;
-                else if (o.metodo_pago === 'sinpe') totals.total_sinpe += o.total;
-                else totals.total_otro += o.total;
+                if (o.metodo_pago === 'mixto' && o.pagos) {
+                    if (o.pagos.efectivo) totals.total_efectivo += Number(o.pagos.efectivo);
+                    if (o.pagos.tarjeta) totals.total_tarjeta += Number(o.pagos.tarjeta);
+                    if (o.pagos.sinpe) totals.total_sinpe += Number(o.pagos.sinpe);
+                    if (o.pagos.otro) totals.total_otro += Number(o.pagos.otro);
+                } else {
+                    if (o.metodo_pago === 'efectivo') totals.total_efectivo += o.total;
+                    else if (o.metodo_pago === 'tarjeta') totals.total_tarjeta += o.total;
+                    else if (o.metodo_pago === 'sinpe') totals.total_sinpe += o.total;
+                    else totals.total_otro += o.total;
+                }
             }
 
             return this.handleResponse(totals, null);
@@ -331,7 +386,7 @@ export class OrdenService extends BaseService {
 
 
     async getReporteData(fechaInicio: string, fechaFin: string): Promise<ApiResponse<{
-        kpis: { revenue: number, salesCount: number, avgTicket: number },
+        kpis: { revenue: number, salesCount: number, avgTicket: number, avgPrepTime: number },
         topProducts: { name: string, quantity: number, revenue: number }[],
         chartData: { name: string, value: number }[]
     }>> {
@@ -351,6 +406,9 @@ export class OrdenService extends BaseService {
             const salesCount = ords.length;
             const revenue = ords.reduce((sum, o) => sum + o.total, 0);
             const avgTicket = salesCount > 0 ? revenue / salesCount : 0;
+
+            const prepTimes = ords.filter(o => o.tiempo_preparacion_minutos != null).map(o => o.tiempo_preparacion_minutos as number);
+            const avgPrepTime = prepTimes.length > 0 ? prepTimes.reduce((a, b) => a + b, 0) / prepTimes.length : 0;
 
             const productMap: Record<string, { quantity: number, revenue: number }> = {};
             const chartMap: Record<string, number> = {};
@@ -381,7 +439,7 @@ export class OrdenService extends BaseService {
             });
 
             return this.handleResponse({
-                kpis: { revenue, salesCount, avgTicket },
+                kpis: { revenue, salesCount, avgTicket, avgPrepTime },
                 topProducts,
                 chartData
             }, null);
