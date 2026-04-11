@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import Modal from '../common/Modal';
+import CabysSelector from '../common/CabysSelector';
 import { createRecetaAction } from '@/lib/actions/receta.actions';
 import { useUsuario } from '@/lib/hooks/useUsuario';
+import { CabysItem } from '@/lib/types';
 
 interface AddProductModalProps {
     isOpen: boolean;
@@ -21,6 +23,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
     const isAuthorized = usuario?.rol?.toLowerCase() === 'master' || usuario?.rol?.toLowerCase() === 'admin';
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [selectedCabys, setSelectedCabys] = useState<CabysItem | null>(null);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -33,12 +36,15 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
             nombre: formData.get('nombre') as string,
             precio: Number(formData.get('precio')),
             categoria: formData.get('categoria') as string,
+            codigo_cabys: selectedCabys?.codigo || '',
+            impuesto_cabys: selectedCabys?.impuesto || 0.13
         };
 
         try {
             const response = await createRecetaAction(data);
             if (response.success) {
                 form.reset();
+                setSelectedCabys(null);
                 onSuccess();
                 onClose();
             } else {
@@ -50,6 +56,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
             setLoading(false);
         }
     };
+
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Agregar Nuevo Producto al Menú">
@@ -88,20 +95,23 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                     <div>
                         <label className={LABEL_CLASS}>Categoría</label>
                         <select
-                            required
                             name="categoria"
-                            className={`${FIELD_CLASS} appearance-none`}
-                            defaultValue=""
+                            className={FIELD_CLASS}
                         >
-                            <option value="" disabled>Seleccionar...</option>
                             {CATEGORIAS.map(cat => (
-                                <option key={cat} value={cat}>
-                                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                                </option>
+                                <option key={cat} value={cat} className="bg-nora-blue-900">{cat.toUpperCase()}</option>
                             ))}
                         </select>
                     </div>
                 </div>
+
+                <div className="bg-nora-blue-800/50 p-4 rounded-3xl border border-nora-blue-700/30">
+                    <CabysSelector 
+                        value={selectedCabys?.codigo || ''} 
+                        onSelect={setSelectedCabys} 
+                    />
+                </div>
+
 
                 <p className="text-xs text-nora-gray-500 pt-1">
                     💡 Después de crear el producto, ve a <strong className="text-nora-gray-400">Recetas</strong> para vincular sus ingredientes.

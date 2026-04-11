@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
+import CabysSelector from '../common/CabysSelector';
 import { updateRecetaAction } from '@/lib/actions/receta.actions';
-import { Receta } from '@/lib/types';
+import { Receta, CabysItem } from '@/lib/types';
 import { useUsuario } from '@/lib/hooks/useUsuario';
 
 interface EditProductModalProps {
@@ -26,12 +27,18 @@ export default function EditProductModal({ isOpen, product, onClose, onSuccess }
     const [nombre, setNombre] = useState('');
     const [precio, setPrecio] = useState('0');
     const [categoria, setCategoria] = useState('otros');
+    const [selectedCabys, setSelectedCabys] = useState<CabysItem | null>(null);
 
     useEffect(() => {
         if (product) {
             setNombre(product.nombre);
             setPrecio(String(product.precio));
             setCategoria(product.categoria);
+            setSelectedCabys(product.codigo_cabys ? { 
+                codigo: product.codigo_cabys, 
+                descripcion: '', 
+                impuesto: product.impuesto_cabys || 0.13 
+            } : null);
             setError(null);
         }
     }, [product]);
@@ -48,6 +55,8 @@ export default function EditProductModal({ isOpen, product, onClose, onSuccess }
                 nombre,
                 precio: Number(precio),
                 categoria,
+                codigo_cabys: selectedCabys?.codigo || '',
+                impuesto_cabys: selectedCabys?.impuesto || 0.13,
             });
 
             if (response.success) {
@@ -98,19 +107,24 @@ export default function EditProductModal({ isOpen, product, onClose, onSuccess }
                     <div>
                         <label className={LABEL_CLASS}>Categoría</label>
                         <select
-                            required
                             value={categoria}
                             onChange={e => setCategoria(e.target.value)}
-                            className={`${FIELD_CLASS} appearance-none`}
+                            className={FIELD_CLASS}
                         >
                             {CATEGORIAS.map(cat => (
-                                <option key={cat} value={cat}>
-                                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                                </option>
+                                <option key={cat} value={cat} className="bg-nora-blue-900">{cat.toUpperCase()}</option>
                             ))}
                         </select>
                     </div>
                 </div>
+
+                <div className="bg-nora-blue-800/50 p-4 rounded-3xl border border-nora-blue-700/30">
+                    <CabysSelector 
+                        value={selectedCabys?.codigo || ''} 
+                        onSelect={setSelectedCabys} 
+                    />
+                </div>
+
 
                 <div className="flex gap-3 pt-2">
                     <button

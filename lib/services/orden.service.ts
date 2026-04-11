@@ -61,6 +61,28 @@ export class OrdenService extends BaseService {
         }
     }
 
+    async getWithCabys(id: string): Promise<ApiResponse<Orden & { items: (OrdenItem & { receta?: { codigo_cabys: string } })[] }>> {
+        try {
+            const supabase = await this.getSupabase();
+            const { data, error } = await supabase
+                .from(this.ordenTable)
+                .select(`
+                    *,
+                    items:orden_item(
+                        *,
+                        receta:receta_id(codigo_cabys)
+                    )
+                `)
+                .eq('id', id)
+                .single();
+
+            return this.handleResponse(data as any, error);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    }
+
+
 
     async create(
         clienteNombre: string,

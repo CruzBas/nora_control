@@ -3,10 +3,11 @@
 import { createClient } from '@/lib/supabase/client';
 import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
+import CabysSelector from '../common/CabysSelector';
 import { updateInventarioAction } from '@/lib/actions/inventario.actions';
 import { useUsuario } from '@/lib/hooks/useUsuario';
 import { useProveedores } from '@/lib/hooks/useProveedores';
-import { Proveedor } from '@/lib/types';
+import { Proveedor, CabysItem } from '@/lib/types';
 
 const supabase = createClient();
 
@@ -20,6 +21,8 @@ interface Ingredient {
     proveedor_id?: string;
     cantidad_reorden?: number;
     proveedor?: Proveedor;
+    codigo_cabys?: string;
+    impuesto_cabys?: number;
 }
 
 interface EditIngredientModalProps {
@@ -46,6 +49,7 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
     const [costo, setCosto] = useState('0');
     const [proveedor_id, setProveedorId] = useState('');
     const [cantidad_reorden, setCantidadReorden] = useState('0');
+    const [selectedCabys, setSelectedCabys] = useState<CabysItem | null>(null);
 
     useEffect(() => {
         if (ingredient) {
@@ -56,6 +60,11 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
             setCosto(String(ingredient.costo));
             setProveedorId(ingredient.proveedor_id || '');
             setCantidadReorden(String(ingredient.cantidad_reorden || 0));
+            setSelectedCabys(ingredient.codigo_cabys ? { 
+                codigo: ingredient.codigo_cabys, 
+                descripcion: '', 
+                impuesto: ingredient.impuesto_cabys || 0.13 
+            } : null);
             setError(null);
         }
     }, [ingredient]);
@@ -76,6 +85,8 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
                 costo: Number(costo),
                 proveedor_id: proveedor_id || undefined,
                 cantidad_reorden: Number(cantidad_reorden),
+                codigo_cabys: selectedCabys?.codigo || '',
+                impuesto_cabys: selectedCabys?.impuesto || 0.13,
             });
 
             if (response.success) {
@@ -195,6 +206,15 @@ export default function EditIngredientModal({ isOpen, ingredient, onClose, onSuc
                         className={FIELD_CLASS}
                     />
                 </div>
+
+                <div className="bg-nora-blue-800/50 p-4 rounded-3xl border border-nora-blue-700/30">
+                    <CabysSelector 
+                        value={selectedCabys?.codigo || ''} 
+                        onSelect={setSelectedCabys} 
+                        label="Código CABYS (Insumo)"
+                    />
+                </div>
+
 
                 <div className="flex gap-3 pt-2">
                     <button
