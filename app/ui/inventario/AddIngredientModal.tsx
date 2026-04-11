@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Modal from '../common/Modal';
+import CabysSelector from '../common/CabysSelector';
 import { createInventarioAction } from '@/lib/actions/inventario.actions';
 import { useUsuario } from '@/lib/hooks/useUsuario';
 import { useProveedores } from '@/lib/hooks/useProveedores';
+import { CabysItem } from '@/lib/types';
 
 interface AddIngredientModalProps {
     isOpen: boolean;
@@ -18,6 +20,7 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
     const { proveedores } = useProveedores();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [selectedCabys, setSelectedCabys] = useState<CabysItem | null>(null);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -33,6 +36,8 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
             costo: Number(formData.get('costo')),
             proveedor_id: formData.get('proveedor_id') as string || undefined,
             cantidad_reorden: parseFloat(formData.get('cantidad_reorden') as string) || 0,
+            codigo_cabys: selectedCabys?.codigo || '',
+            impuesto_cabys: selectedCabys?.impuesto || 0.13,
         };
 
         try {
@@ -163,6 +168,15 @@ export default function AddIngredientModal({ isOpen, onClose, onSuccess }: AddIn
                         className="w-full p-4 bg-nora-blue-900/60 border border-nora-blue-700/50 rounded-2xl text-white focus:ring-2 focus:ring-nora-accent-500 outline-none"
                     />
                 </div>
+
+                <div className="bg-nora-blue-800/50 p-4 rounded-3xl border border-nora-blue-700/30">
+                    <CabysSelector 
+                        value={selectedCabys?.codigo || ''} 
+                        onSelect={setSelectedCabys} 
+                        label="Código CABYS (Insumo)"
+                    />
+                </div>
+
                 <div className="flex gap-3 pt-4">
                     <button
                         type="button"

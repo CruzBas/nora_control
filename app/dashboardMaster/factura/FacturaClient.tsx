@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Orden, MetodoPago } from '@/lib/types';
+import { Orden, MetodoPago, FacturaElectronica } from '@/lib/types';
 import { pagarOrdenAction } from '@/lib/actions/ordenes.actions';
+import FacturaElectronicaModal from './FacturaElectronicaModal';
 
 interface FacturaClientProps {
     initialOrdenes: Orden[];
@@ -16,6 +17,9 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
     const [activeTab, setActiveTab] = useState<'pendientes' | 'cerradas'>('pendientes');
     const [loading, setLoading] = useState(false);
     const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
+    const [showFEModal, setShowFEModal] = useState(false);
+    const [ordenParaFE, setOrdenParaFE] = useState<Orden | null>(null);
+    const [docEmitidos, setDocEmitidos] = useState<Record<string, FacturaElectronica>>({});
 
     const [isSplitMode, setIsSplitMode] = useState(false);
     const [pagosList, setPagosList] = useState<{ id: string, metodo: MetodoPago, monto: number }[]>([]);
@@ -445,6 +449,21 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                                         )}
                                     </div>
                                 </div>
+
+                                {/* Electronic Invoice Button */}
+                                <button
+                                    onClick={() => {
+                                        setOrdenParaFE(selectedOrden);
+                                        setShowFEModal(true);
+                                    }}
+                                    className="w-full mt-4 py-4 font-black rounded-2xl uppercase tracking-widest text-xs transition-all border flex items-center justify-center gap-3 bg-gradient-to-r from-nora-blue-700 via-nora-blue-600 to-nora-accent-600/50 text-nora-white border-nora-blue-600/50 hover:from-nora-accent-500 hover:to-nora-accent-400 hover:text-white hover:border-nora-accent-400 shadow-lg hover:shadow-nora-accent-500/20"
+                                >
+                                    <span className="material-symbols-outlined text-lg">receipt_long</span>
+                                    {docEmitidos[selectedOrden.id]
+                                        ? `Doc. ${docEmitidos[selectedOrden.id].estado_hacienda.toUpperCase()} — Ver`
+                                        : 'Emitir Documento Electrónico'
+                                    }
+                                </button>
                             </div>
                         )}
                     </div>
@@ -464,6 +483,17 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                     </div>
                 )}
             </div>
+            {/* Modal de Factura Electrónica */}
+            <FacturaElectronicaModal
+                isOpen={showFEModal}
+                onClose={() => { setShowFEModal(false); setOrdenParaFE(null); }}
+                orden={ordenParaFE}
+                onSuccess={(factura) => {
+                    if (factura.orden_id) {
+                        setDocEmitidos(prev => ({ ...prev, [factura.orden_id!]: factura }));
+                    }
+                }}
+            />
         </div>
     );
 }

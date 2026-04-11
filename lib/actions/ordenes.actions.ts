@@ -15,6 +15,10 @@ export async function getOrdenesTerminadasHoyAction(): Promise<ApiResponse<Orden
     return ordenService.getTerminadasHoy();
 }
 
+export async function getOrdenWithCabysAction(id: string) {
+    return ordenService.getWithCabys(id);
+}
+
 export async function getPagadasHoyAction(): Promise<ApiResponse<Orden[]>> {
     return ordenService.getPagadasHoy();
 }
