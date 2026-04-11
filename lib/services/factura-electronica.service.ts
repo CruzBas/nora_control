@@ -300,7 +300,7 @@ export class FacturaElectronicaService extends BaseService {
                     .from(this.facturaTable)
                     .update({
                         estado_hacienda: fnData.estado || 'enviado',
-                        mensaje_hacienda: fnData.mensaje || 'Documento enviado a Hacienda',
+                        mensaje_hacienda: fnData.mensaje || (fnData.estado === 'error' ? 'Error al enviar a Hacienda' : 'Documento enviado a Hacienda'),
                         xml_enviado: fnData.xml_enviado || null,
                         updated_at: new Date().toISOString(),
                     })
