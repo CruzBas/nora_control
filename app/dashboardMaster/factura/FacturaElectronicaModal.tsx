@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Orden, TipoDocumentoFE, ContribuyenteHacienda, FacturaElectronica } from '@/lib/types';
+import { Orden, TipoDocumentoFE, ContribuyenteHacienda, FacturaElectronica, ConfigFacturacion } from '@/lib/types';
 import {
     emitirDocumentoAction,
     consultarContribuyenteAction,
@@ -9,6 +9,7 @@ import {
     getConfigFacturacionAction,
 } from '@/lib/actions/factura-electronica.actions';
 import FacturaVisual from '@/app/ui/factura/FacturaVisual';
+
 
 interface Props {
     isOpen: boolean;
