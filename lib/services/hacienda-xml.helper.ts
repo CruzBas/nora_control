@@ -1,22 +1,7 @@
-// @ts-ignore
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 
-// Inyectar globalmente para asegurar que cualquier instancia de xadesjs/xml-core los encuentre
-if (typeof global !== 'undefined') {
-    (global as any).DOMParser = DOMParser;
-    (global as any).XMLSerializer = XMLSerializer;
-}
-
-// @ts-ignore
-import { setNodeDependencies } from 'xadesjs';
-// @ts-ignore
-import Signer from 'haciendacostarica-signer';
-
-try {
-    setNodeDependencies({ DOMParser, XMLSerializer });
-} catch (e) {
-    console.warn("Could not setNodeDependencies on xadesjs, relying on global injection");
-}
+// Importaciones para la firma manual
+const forge = require('node-forge');
 
 export const TIPO_DOC_NAMES: Record<string, string> = {
     '01': 'FacturaElectronica',
@@ -61,7 +46,6 @@ export function buildXml(params: any): string {
     }
 
     let detalleLines = [];
-    console.log("Generando XML: items en detalle =", params.detalle?.length);
     let lineaNum = 1;
     for (const item of params.detalle) {
         const subtotalItem = item.precio_unitario * item.cantidad;
@@ -149,20 +133,49 @@ export function buildXml(params: any): string {
 
 export async function signXmlHacienda(xmlString: string, p12Base64: string, p12Pin: string): Promise<string> {
     try {
-        console.log("Firmando XML de Hacienda en servidor Node.js...");
-        // This npm module returns a Base64 string directly of the fully signed XML
-        const signedXmlBase64 = await Signer.sign(xmlString, p12Base64, p12Pin);
-        
-        if (!signedXmlBase64) throw new Error("haciendacostarica-signer returned empty");
-        
-        // Sometimes it returns the raw XML string. Check if it starts with <
-        if (String(signedXmlBase64).trim().startsWith('<')) {
-             return Buffer.from(signedXmlBase64).toString('base64');
-        }
-        
-        return signedXmlBase64;
+        console.log("[Signer] Generando Firma XAdES-EPES Manual (v3)...");
+
+        const p12Der = forge.util.decode64(p12Base64);
+        const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(p12Der), true, p12Pin);
+        const bags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag] || 
+                    p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag] || [];
+        const privateKey = bags[0].key;
+        const certificate = p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag][0].cert;
+        const certBase64 = forge.util.encode64(forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes());
+
+        const ts = new Date().toISOString().split('.')[0] + "Z";
+        const sigId = "Signature-738291"; // ID estático para pruebas, luego podemos hacerlo dinámico
+        const propId = "SignedProperties-738291";
+        const refId = "Reference-738291";
+
+        const mdCert = forge.md.sha256.create();
+        mdCert.update(forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes());
+        const certDigest = forge.util.encode64(mdCert.digest().getBytes());
+        // Sin espacios para máxima compatibilidad
+        const issuerName = certificate.issuer.attributes.reverse().map((a: any) => `${a.shortName}=${a.value}`).join(',');
+
+        const mdDoc = forge.md.sha256.create();
+        mdDoc.update(xmlString, 'utf8');
+        const docDigest = forge.util.encode64(mdDoc.digest().getBytes());
+
+        const xadesXml = `<QualifyingProperties xmlns="http://uri.etsi.org/01903/v1.3.2#" Target="#${sigId}"><SignedProperties Id="${propId}"><SignedSignatureProperties><SigningTime>${ts}</SigningTime><SigningCertificate><Cert><CertDigest><ds:DigestMethod xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue xmlns:ds="http://www.w3.org/2000/09/xmldsig#">${certDigest}</ds:DigestValue></CertDigest><IssuerSerial><ds:X509IssuerName xmlns:ds="http://www.w3.org/2000/09/xmldsig#">${issuerName}</ds:X509IssuerName><ds:X509SerialNumber xmlns:ds="http://www.w3.org/2000/09/xmldsig#">${certificate.serialNumber}</ds:X509SerialNumber></IssuerSerial></Cert></SigningCertificate><SignaturePolicyIdentifier><SignaturePolicyId><SigPolicyId><Identifier Qualifier="OIDAsURI">https://www.hacienda.go.cr/xml-schemas/v4.3/poliza-de-firma-electronica-v4.3.pdf</Identifier></SigPolicyId><SigPolicyHash><ds:DigestMethod xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue xmlns:ds="http://www.w3.org/2000/09/xmldsig#">V8lVV6GseUqv97qnAnEsh97At9c=</ds:DigestValue></SigPolicyHash></SignaturePolicyId></SignaturePolicyIdentifier><SignerRole><ClaimedRoles><ClaimedRole>ObligadoTributario</ClaimedRole></ClaimedRoles></SignerRole></SignedSignatureProperties></SignedProperties></QualifyingProperties>`;
+
+        const mdProps = forge.md.sha256.create();
+        mdProps.update(xadesXml, 'utf8');
+        const propsDigest = forge.util.encode64(mdProps.digest().getBytes());
+
+        const signedInfoXml = `<ds:SignedInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference Id="${refId}" URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>${docDigest}</ds:DigestValue></ds:Reference><ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#${propId}"><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>${propsDigest}</ds:DigestValue></ds:Reference></ds:SignedInfo>`;
+
+        const mdSign = forge.md.sha256.create();
+        mdSign.update(signedInfoXml, 'utf8');
+        const signatureValue = forge.util.encode64(privateKey.sign(mdSign));
+
+        const fullSignature = `<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="${sigId}">${signedInfoXml}<ds:SignatureValue>${signatureValue}</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>${certBase64}</ds:X509Certificate></ds:X509Data></ds:KeyInfo><ds:Object>${xadesXml}</ds:Object></ds:Signature>`;
+
+        const finalSignedXml = xmlString.replace(/<\/[^>]+>$/, match => fullSignature + match);
+        return Buffer.from(finalSignedXml).toString("base64");
     } catch (err: any) {
-        console.error("Error al firmar XML de Hacienda:", err.message || err);
-        throw new Error(`XAdES-EPES internal signer failed: ${err.message || err}`);
+        console.error("[Signer] Error en firma:", err.message || err);
+        throw new Error(`Firma fallida: ${err.message || err}`);
     }
 }
