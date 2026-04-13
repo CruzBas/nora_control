@@ -1,7 +1,8 @@
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 
-// Importaciones para la firma manual
 const forge = require('node-forge');
+const crypto = require('crypto');
+const { SignedXml, C14nCanonicalization } = require('xml-crypto');
 
 export const TIPO_DOC_NAMES: Record<string, string> = {
     '01': 'FacturaElectronica',
@@ -45,8 +46,9 @@ export function buildXml(params: any): string {
   </Receptor>`;
     }
 
-    let detalleLines = [];
+    let detalleLines: string[] = [];
     let lineaNum = 1;
+    console.log("Generando XML: items en detalle =", params.detalle?.length);
     for (const item of params.detalle) {
         const subtotalItem = item.precio_unitario * item.cantidad;
         const impuestoItem = subtotalItem * 0.13;
@@ -131,51 +133,176 @@ export function buildXml(params: any): string {
 </${docName}>`;
 }
 
+/**
+ * Firma XAdES-EPES usando xml-crypto v6 para C14N + node.js crypto para firma.
+ * 
+ * ESTRATEGIA: Usar xml-crypto solo para la firma enveloped del documento.
+ * Luego, calcular el digest de SignedProperties manualmente usando C14N de xml-crypto,
+ * e inyectar la referencia extra y las QualifyingProperties en el XML final,
+ * recalculando la SignatureValue.
+ */
 export async function signXmlHacienda(xmlString: string, p12Base64: string, p12Pin: string): Promise<string> {
     try {
-        console.log("[Signer] Generando Firma XAdES-EPES Manual (v3)...");
+        console.log("[Signer] Iniciando firma XAdES-EPES (xml-crypto + manual XAdES)...");
 
+        // ── 1. Extraer llave privada y certificado del P12 ──
         const p12Der = forge.util.decode64(p12Base64);
         const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(p12Der), true, p12Pin);
-        const bags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag] || 
-                    p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag] || [];
-        const privateKey = bags[0].key;
-        const certificate = p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag][0].cert;
-        const certBase64 = forge.util.encode64(forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes());
+        const pkBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag] ||
+                       p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag] || [];
+        if (!pkBags?.length) throw new Error("No se encontró la llave privada");
+        const privateKeyPem = forge.pki.privateKeyToPem(pkBags[0].key);
 
-        const ts = new Date().toISOString().split('.')[0] + "Z";
-        const sigId = "Signature-738291"; // ID estático para pruebas, luego podemos hacerlo dinámico
-        const propId = "SignedProperties-738291";
-        const refId = "Reference-738291";
+        const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag] || [];
+        if (!certBags?.length) throw new Error("No se encontró el certificado");
+        const certificate = certBags[0].cert;
+        const certBase64 = forge.pki.certificateToPem(certificate)
+            .replace('-----BEGIN CERTIFICATE-----', '')
+            .replace('-----END CERTIFICATE-----', '')
+            .replace(/\r?\n/g, '');
 
-        const mdCert = forge.md.sha256.create();
-        mdCert.update(forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes());
-        const certDigest = forge.util.encode64(mdCert.digest().getBytes());
-        // Sin espacios para máxima compatibilidad
-        const issuerName = certificate.issuer.attributes.reverse().map((a: any) => `${a.shortName}=${a.value}`).join(',');
+        // ── 2. Metadatos del certificado ──
+        const certDerBytes = forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes();
+        const certDigest = crypto.createHash('sha256').update(Buffer.from(certDerBytes, 'binary')).digest('base64');
+        const issuerName = certificate.issuer.attributes.map((a: any) => `${a.shortName}=${a.value}`).join(',');
+        const serialNumber = certificate.serialNumber;
 
-        const mdDoc = forge.md.sha256.create();
-        mdDoc.update(xmlString, 'utf8');
-        const docDigest = forge.util.encode64(mdDoc.digest().getBytes());
+        // ── 3. IDs y timestamp ──
+        const uniqueId = Date.now().toString();
+        const sigId = `Signature-${uniqueId}`;
+        const propId = `SignedProperties-${uniqueId}`;
+        const ts = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
 
-        const xadesXml = `<QualifyingProperties xmlns="http://uri.etsi.org/01903/v1.3.2#" Target="#${sigId}"><SignedProperties Id="${propId}"><SignedSignatureProperties><SigningTime>${ts}</SigningTime><SigningCertificate><Cert><CertDigest><ds:DigestMethod xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue xmlns:ds="http://www.w3.org/2000/09/xmldsig#">${certDigest}</ds:DigestValue></CertDigest><IssuerSerial><ds:X509IssuerName xmlns:ds="http://www.w3.org/2000/09/xmldsig#">${issuerName}</ds:X509IssuerName><ds:X509SerialNumber xmlns:ds="http://www.w3.org/2000/09/xmldsig#">${certificate.serialNumber}</ds:X509SerialNumber></IssuerSerial></Cert></SigningCertificate><SignaturePolicyIdentifier><SignaturePolicyId><SigPolicyId><Identifier Qualifier="OIDAsURI">https://www.hacienda.go.cr/xml-schemas/v4.3/poliza-de-firma-electronica-v4.3.pdf</Identifier></SigPolicyId><SigPolicyHash><ds:DigestMethod xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue xmlns:ds="http://www.w3.org/2000/09/xmldsig#">V8lVV6GseUqv97qnAnEsh97At9c=</ds:DigestValue></SigPolicyHash></SignaturePolicyId></SignaturePolicyIdentifier><SignerRole><ClaimedRoles><ClaimedRole>ObligadoTributario</ClaimedRole></ClaimedRoles></SignerRole></SignedSignatureProperties></SignedProperties></QualifyingProperties>`;
+        // ── 4. PASO 1: Firma base del documento con xml-crypto (solo enveloped) ──
+        console.log("[Signer] Paso 1: Firma enveloped del documento...");
+        const sig = new SignedXml({
+            privateKey: privateKeyPem,
+            signatureAlgorithm: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
+            canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
+        });
 
-        const mdProps = forge.md.sha256.create();
-        mdProps.update(xadesXml, 'utf8');
-        const propsDigest = forge.util.encode64(mdProps.digest().getBytes());
+        // Solo el documento principal
+        sig.addReference({
+            xpath: '/*',
+            transforms: [
+                'http://www.w3.org/2000/09/xmldsig#enveloped-signature',
+                'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
+            ],
+            digestAlgorithm: 'http://www.w3.org/2001/04/xmlenc#sha256',
+            uri: '',
+            isEmptyUri: true,
+        });
 
-        const signedInfoXml = `<ds:SignedInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference Id="${refId}" URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>${docDigest}</ds:DigestValue></ds:Reference><ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#${propId}"><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>${propsDigest}</ds:DigestValue></ds:Reference></ds:SignedInfo>`;
+        sig.getKeyInfoContent = () =>
+            `<ds:X509Data><ds:X509Certificate>${certBase64}</ds:X509Certificate></ds:X509Data>`;
 
-        const mdSign = forge.md.sha256.create();
-        mdSign.update(signedInfoXml, 'utf8');
-        const signatureValue = forge.util.encode64(privateKey.sign(mdSign));
+        sig.computeSignature(xmlString, {
+            prefix: 'ds',
+            attrs: { Id: sigId },
+            location: { reference: '/*', action: 'append' },
+        });
 
-        const fullSignature = `<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="${sigId}">${signedInfoXml}<ds:SignatureValue>${signatureValue}</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>${certBase64}</ds:X509Certificate></ds:X509Data></ds:KeyInfo><ds:Object>${xadesXml}</ds:Object></ds:Signature>`;
+        let baseSignedXml = sig.getSignedXml();
+        console.log("[Signer] Paso 1 completado. Firma base generada.");
 
-        const finalSignedXml = xmlString.replace(/<\/[^>]+>$/, match => fullSignature + match);
-        return Buffer.from(finalSignedXml).toString("base64");
+        // ── 5. PASO 2: Construir QualifyingProperties ──
+        const qualifyingProperties =
+            `<xades:QualifyingProperties xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Target="#${sigId}">` +
+            `<xades:SignedProperties Id="${propId}">` +
+            `<xades:SignedSignatureProperties>` +
+            `<xades:SigningTime>${ts}</xades:SigningTime>` +
+            `<xades:SigningCertificate>` +
+            `<xades:Cert>` +
+            `<xades:CertDigest>` +
+            `<ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>` +
+            `<ds:DigestValue>${certDigest}</ds:DigestValue>` +
+            `</xades:CertDigest>` +
+            `<xades:IssuerSerial>` +
+            `<ds:X509IssuerName>${issuerName}</ds:X509IssuerName>` +
+            `<ds:X509SerialNumber>${serialNumber}</ds:X509SerialNumber>` +
+            `</xades:IssuerSerial>` +
+            `</xades:Cert>` +
+            `</xades:SigningCertificate>` +
+            `<xades:SignaturePolicyIdentifier>` +
+            `<xades:SignaturePolicyId>` +
+            `<xades:SigPolicyId>` +
+            `<xades:Identifier Qualifier="OIDAsURI">https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/poliza-de-firma-electronica-v4.3.pdf</xades:Identifier>` +
+            `</xades:SigPolicyId>` +
+            `<xades:SigPolicyHash>` +
+            `<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>` +
+            `<ds:DigestValue>V8lVV6GseUqv97qnAnEsh97At9c=</ds:DigestValue>` +
+            `</xades:SigPolicyHash>` +
+            `</xades:SignaturePolicyId>` +
+            `</xades:SignaturePolicyIdentifier>` +
+            `<xades:SignerRole>` +
+            `<xades:ClaimedRoles>` +
+            `<xades:ClaimedRole>ObligadoTributario</xades:ClaimedRole>` +
+            `</xades:ClaimedRoles>` +
+            `</xades:SignerRole>` +
+            `</xades:SignedSignatureProperties>` +
+            `</xades:SignedProperties>` +
+            `</xades:QualifyingProperties>`;
+
+        // ── 6. PASO 3: Calcular el digest C14N del SignedProperties ──
+        console.log("[Signer] Paso 2: Calculando digest C14N de SignedProperties...");
+        const propsDoc = new DOMParser().parseFromString(qualifyingProperties, 'text/xml');
+        const signedPropsNodes = propsDoc.getElementsByTagName('xades:SignedProperties');
+        if (!signedPropsNodes || signedPropsNodes.length === 0) {
+            throw new Error("No se pudo parsear SignedProperties del QualifyingProperties");
+        }
+        const c14n = new C14nCanonicalization();
+        const canonicalSignedProps = c14n.process(signedPropsNodes[0], { inclusiveNamespacesPrefixList: [] }).toString();
+        const propsDigest = crypto.createHash('sha256').update(canonicalSignedProps).digest('base64');
+
+        // ── 7. PASO 4: Inyectar la referencia a SignedProperties en SignedInfo ──
+        console.log("[Signer] Paso 3: Inyectando referencia XAdES y recalculando firma...");
+        const propsReferenceXml =
+            `<ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#${propId}">` +
+            `<ds:Transforms><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" /></ds:Transforms>` +
+            `<ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />` +
+            `<ds:DigestValue>${propsDigest}</ds:DigestValue>` +
+            `</ds:Reference>`;
+
+        // Insertar la referencia extra en SignedInfo (antes de </ds:SignedInfo>)
+        baseSignedXml = baseSignedXml.replace('</ds:SignedInfo>', propsReferenceXml + '</ds:SignedInfo>');
+
+        // Insertar QualifyingProperties como ds:Object (antes de </ds:Signature>)
+        baseSignedXml = baseSignedXml.replace('</ds:Signature>', `<ds:Object>${qualifyingProperties}</ds:Object></ds:Signature>`);
+
+        // ── 8. PASO 5: Recalcular SignatureValue sobre el nuevo SignedInfo ──
+        const signedInfoMatch = baseSignedXml.match(/<ds:SignedInfo[^]*?<\/ds:SignedInfo>/);
+        if (!signedInfoMatch) throw new Error("No se pudo extraer SignedInfo del XML firmado");
+
+        // Canonicalizar el SignedInfo actualizado
+        // IMPORTANTE: Agregar xmlns:ds al extraer SignedInfo standalone, porque en el XML
+        // original hereda el namespace de <ds:Signature xmlns:ds="...">.
+        // Sin esto, la C14N produce un resultado diferente y la firma no valida.
+        let signedInfoForC14N = signedInfoMatch[0];
+        if (!signedInfoForC14N.includes('xmlns:ds=')) {
+            signedInfoForC14N = signedInfoForC14N.replace(
+                '<ds:SignedInfo',
+                '<ds:SignedInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"'
+            );
+        }
+        const signedInfoDoc = new DOMParser().parseFromString(signedInfoForC14N, 'text/xml');
+        const canonicalSignedInfo = c14n.process(signedInfoDoc.documentElement, { inclusiveNamespacesPrefixList: [] }).toString();
+
+        // Firmar con Node.js crypto
+        const signer = crypto.createSign('RSA-SHA256');
+        signer.update(canonicalSignedInfo);
+        const newSignatureValue = signer.sign(privateKeyPem, 'base64');
+
+        // Reemplazar el SignatureValue original
+        baseSignedXml = baseSignedXml.replace(
+            /<ds:SignatureValue>[^<]+<\/ds:SignatureValue>/,
+            `<ds:SignatureValue>${newSignatureValue}</ds:SignatureValue>`
+        );
+
+        console.log("[Signer] ¡Firma XAdES-EPES completada con éxito!");
+        return Buffer.from(baseSignedXml).toString('base64');
+
     } catch (err: any) {
-        console.error("[Signer] Error en firma:", err.message || err);
+        console.error("[Signer] Error:", err.message || err);
         throw new Error(`Firma fallida: ${err.message || err}`);
     }
 }
