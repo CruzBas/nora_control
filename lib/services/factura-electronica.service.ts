@@ -254,7 +254,7 @@ export class FacturaElectronicaService extends BaseService {
                 consecutivo,
                 fecha: fecha.toISOString(),
                 config: cfg,
-                receptor: params.receptor_identificacion ? {
+                receptor: (params.receptor_identificacion && params.receptor_tipo_identificacion) ? {
                     nombre: params.receptor_nombre,
                     identificacion: params.receptor_identificacion,
                     tipo_identificacion: params.receptor_tipo_identificacion,
@@ -285,15 +285,24 @@ export class FacturaElectronicaService extends BaseService {
                 body: {
                     factura_id: (factura as FacturaElectronica).id,
                     clave,
-                    fecha: fecha.toISOString(),
+                    // Hacienda API JSON format requirement: "2019-01-01T12:00:00-06:00" natively
+                    fecha: fecha.getFullYear() + '-' +
+                        String(fecha.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(fecha.getDate()).padStart(2, '0') + 'T' +
+                        String(fecha.getHours()).padStart(2, '0') + ':' +
+                        String(fecha.getMinutes()).padStart(2, '0') + ':' +
+                        String(fecha.getSeconds()).padStart(2, '0') + '-06:00',
                     tipo_documento: params.tipo_documento,
                     config: {
-                        cedula_emisor: cfg.cedula_emisor,
-                        tipo_identificacion_emisor: cfg.tipo_identificacion_emisor,
-                        ambiente: cfg.ambiente,
-                        usuario_hacienda: cfg.usuario_hacienda,
-                        password_hacienda: cfg.password_hacienda,
+                        ...cfg,
+                        cedula_emisor: (cfg.cedula_emisor || '').replace(/\D/g, '').padStart(12, '0'),
                     },
+                    receptor_identificacion: (params.receptor_identificacion && params.receptor_tipo_identificacion) 
+                        ? String(params.receptor_identificacion).replace(/\D/g, '').padStart(12, '0') 
+                        : undefined,
+                    receptor_tipo_identificacion: (params.receptor_identificacion && params.receptor_tipo_identificacion) 
+                        ? params.receptor_tipo_identificacion 
+                        : undefined,
                     xml_firmado_base64: xmlToSubmitBase64,
                 },
             });

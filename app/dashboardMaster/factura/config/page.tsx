@@ -38,9 +38,46 @@ export default function ConfigFacturacionPage() {
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState('');
 
+    const [locationData, setLocationData] = useState({
+        provincias: {} as Record<string, string>,
+        cantones: {} as Record<string, string>,
+        distritos: {} as Record<string, string>,
+        barrios: {} as Record<string, string>,
+    });
+
     useEffect(() => {
         loadConfig();
     }, []);
+
+    // Location API integrations
+    useEffect(() => {
+        const fetchAPI = async (endpoint: string) => {
+            try {
+                const res = await fetch(`https://ubicaciones.paginasweb.cr/${endpoint}.json`);
+                if (!res.ok) return {};
+                return await res.json();
+            } catch {
+                return {};
+            }
+        };
+
+        const loadLocations = async () => {
+            const provincias = await fetchAPI('provincias');
+            const provId = parseInt(config.provincia || '1', 10);
+            const cantones = provId ? await fetchAPI(`provincia/${provId}/cantones`) : {};
+            const cantonId = parseInt(config.canton || '1', 10);
+            const distritos = (provId && cantonId) ? await fetchAPI(`provincia/${provId}/canton/${cantonId}/distritos`) : {};
+            const distId = parseInt(config.distrito || '1', 10);
+            const barrios = (provId && cantonId && distId) ? await fetchAPI(`provincia/${provId}/canton/${cantonId}/distrito/${distId}/barrios`) : {};
+            
+            setLocationData({ provincias, cantones, distritos, barrios });
+        };
+
+        if (config.provincia) {
+            loadLocations();
+        }
+    }, [config.provincia, config.canton, config.distrito]);
+
 
     const loadConfig = async () => {
         setLoading(true);
@@ -225,51 +262,75 @@ export default function ConfigFacturacionPage() {
                     <span className="material-symbols-outlined text-sm">location_on</span>
                     Ubicación
                 </h2>
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 mb-2">
+                    <p className="text-[11px] text-blue-300">
+                        <span className="font-bold">ℹ️ Importante:</span> La ubicación aquí provista <strong>debe ser exactamente la registrada en Tributación / ATV</strong> para esta cédula (Rechazo -37).
+                    </p>
+                </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                         <label className="text-[10px] font-bold text-nora-gray-500 block mb-1">Provincia</label>
                         <select
-                            value={config.provincia}
-                            onChange={(e) => update('provincia', e.target.value)}
+                            value={config.provincia ? String(parseInt(config.provincia, 10)) : ''}
+                            onChange={(e) => {
+                                update('provincia', e.target.value);
+                                update('canton', '01');
+                                update('distrito', '01');
+                                update('barrio', '01');
+                            }}
                             className="w-full bg-nora-blue-800 border border-nora-blue-700 focus:border-nora-accent-500 text-nora-white text-sm font-bold rounded-xl p-3 outline-none"
                         >
-                            {Object.entries(PROVINCIAS).map(([k, v]) => (
+                            <option value="">Seleccione...</option>
+                            {Object.entries(locationData.provincias).map(([k, v]) => (
                                 <option key={k} value={k}>{v}</option>
                             ))}
                         </select>
                     </div>
                     <div>
                         <label className="text-[10px] font-bold text-nora-gray-500 block mb-1">Cantón</label>
-                        <input
-                            type="text"
-                            value={config.canton}
-                            onChange={(e) => update('canton', e.target.value)}
-                            placeholder="01"
-                            maxLength={2}
+                        <select
+                            value={config.canton ? String(parseInt(config.canton, 10)) : ''}
+                            onChange={(e) => {
+                                update('canton', e.target.value.padStart(2, '0'));
+                                update('distrito', '01');
+                                update('barrio', '01');
+                            }}
                             className="w-full bg-nora-blue-800 border border-nora-blue-700 focus:border-nora-accent-500 text-nora-white text-sm font-bold rounded-xl p-3 outline-none"
-                        />
+                        >
+                            <option value="">Seleccione...</option>
+                            {Object.entries(locationData.cantones).map(([k, v]) => (
+                                <option key={k} value={k}>{v}</option>
+                            ))}
+                        </select>
                     </div>
                     <div>
                         <label className="text-[10px] font-bold text-nora-gray-500 block mb-1">Distrito</label>
-                        <input
-                            type="text"
-                            value={config.distrito}
-                            onChange={(e) => update('distrito', e.target.value)}
-                            placeholder="01"
-                            maxLength={2}
+                        <select
+                            value={config.distrito ? String(parseInt(config.distrito, 10)) : ''}
+                            onChange={(e) => {
+                                update('distrito', e.target.value.padStart(2, '0'));
+                                update('barrio', '01');
+                            }}
                             className="w-full bg-nora-blue-800 border border-nora-blue-700 focus:border-nora-accent-500 text-nora-white text-sm font-bold rounded-xl p-3 outline-none"
-                        />
+                        >
+                            <option value="">Seleccione...</option>
+                            {Object.entries(locationData.distritos).map(([k, v]) => (
+                                <option key={k} value={k}>{v}</option>
+                            ))}
+                        </select>
                     </div>
                     <div>
                         <label className="text-[10px] font-bold text-nora-gray-500 block mb-1">Barrio</label>
-                        <input
-                            type="text"
-                            value={config.barrio || ''}
-                            onChange={(e) => update('barrio', e.target.value)}
-                            placeholder="01"
-                            maxLength={2}
+                        <select
+                            value={config.barrio ? String(parseInt(config.barrio, 10)) : ''}
+                            onChange={(e) => update('barrio', e.target.value.padStart(2, '0'))}
                             className="w-full bg-nora-blue-800 border border-nora-blue-700 focus:border-nora-accent-500 text-nora-white text-sm font-bold rounded-xl p-3 outline-none"
-                        />
+                        >
+                            <option value="">Seleccione...</option>
+                            {Object.entries(locationData.barrios).map(([k, v]) => (
+                                <option key={k} value={k}>{v}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
                 <div>
