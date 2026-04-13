@@ -77,6 +77,14 @@ export async function getStatsFEAction() {
     return facturaElectronicaService.getStats();
 }
 
+export async function consultarEstadoFEAction(facturaId?: string) {
+    const result = await facturaElectronicaService.consultarEstado(facturaId);
+    if (result.success) {
+        revalidatePath('/dashboardMaster/factura');
+    }
+    return result;
+}
+
 
 // ─── Consultar Contribuyente (Hacienda API) ─────────────────────────
 

@@ -7,6 +7,8 @@ import {
     consultarContribuyenteAction,
     getDocumentoByOrdenAction,
     getConfigFacturacionAction,
+    consultarEstadoFEAction,
+    getDocumentoFEAction,
 } from '@/lib/actions/factura-electronica.actions';
 import FacturaVisual from '@/app/ui/factura/FacturaVisual';
 
@@ -29,6 +31,7 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
     const [contribuyente, setContribuyente] = useState<ContribuyenteHacienda | null>(null);
     const [lookupError, setLookupError] = useState('');
     const [emitido, setEmitido] = useState<FacturaElectronica | null>(null);
+    const [isPolling, setIsPolling] = useState(false);
     const [error, setError] = useState('');
     const [step, setStep] = useState<'form' | 'preview' | 'result'>('form');
     const [existingDoc, setExistingDoc] = useState<FacturaElectronica | null>(null);
@@ -74,6 +77,53 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
         }
     }, [isOpen, orden]);
 
+    // Automatic Polling
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        let attempts = 0;
+        const maxAttempts = 12; // 1 minute (5s * 12)
+
+        const poll = async () => {
+            if (!emitido || (emitido.estado_hacienda !== 'enviado' && emitido.estado_hacienda !== 'pendiente')) {
+                setIsPolling(false);
+                return;
+            }
+
+            if (attempts >= maxAttempts) {
+                setIsPolling(false);
+                return;
+            }
+
+            attempts++;
+            setIsPolling(true);
+            const res = await consultarEstadoFEAction(emitido.id);
+            
+            if (res.success && res.data) {
+                // If we got a real change in status, or it's just the same data
+                // The edge function should have updated the DB and returned the results
+                // Since actions revalidate, we might need to refetch or just wait for the update
+                const { data: updatedDoc } = await getDocumentoFEAction(emitido.id);
+                if (updatedDoc) {
+                    setEmitido(updatedDoc);
+                    if (updatedDoc.estado_hacienda === 'aceptado' || updatedDoc.estado_hacienda === 'rechazado') {
+                        setIsPolling(false);
+                        return;
+                    }
+                }
+            }
+            
+            timer = setTimeout(poll, 5000);
+        };
+
+        if (emitido && (emitido.estado_hacienda === 'enviado' || emitido.estado_hacienda === 'pendiente') && !isPolling) {
+            poll();
+        }
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [emitido?.id, emitido?.estado_hacienda]);
+
     const handleLookup = async () => {
         if (!cedula || cedula.length < 9) {
             setLookupError('Ingrese una cédula válida (9-12 dígitos)');
@@ -110,8 +160,14 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
             nombre: item.nombre,
             cantidad: item.cantidad,
             precio: item.precio,
-            codigo_cabys: item.receta?.codigo_cabys || '',
+            codigo_cabys: item.codigo_cabys || item.receta?.codigo_cabys || '',
         }));
+
+        if (items.length === 0) {
+            setError('La orden no tiene productos para facturar.');
+            setLoading(false);
+            return;
+        }
 
         // Validation for missing CABYS
         const missingCabys = items.filter((i: any) => !i.codigo_cabys);
@@ -390,7 +446,7 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                             {/* Action */}
                             <button
                                 onClick={handleEmit}
-                                disabled={loading}
+                                disabled={loading || !config || (tipoDoc === '01' && !cedula) || ((orden as any).items?.length === 0 && !enrichedOrden?.items)}
                                 className="w-full py-5 font-black rounded-2xl shadow-xl uppercase tracking-widest text-base transition-all bg-gradient-to-r from-nora-accent-500 to-nora-accent-400 text-white shadow-nora-accent-500/20 hover:from-nora-accent-400 hover:to-nora-accent-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                             >
                                 {loading ? (
@@ -434,9 +490,38 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                                                 emitido.estado_hacienda === 'rechazado' ? 'Documento Rechazado' :
                                                     'Procesando...'}
                                 </h3>
+                                {isPolling && (
+                                    <div className="flex items-center justify-center gap-2 mt-2 text-nora-accent-400">
+                                        <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest italic">Consultando estado final...</span>
+                                    </div>
+                                )}
                                 <p className="text-nora-gray-400 text-sm mt-2">
                                     {emitido.mensaje_hacienda || 'El documento fue procesado.'}
                                 </p>
+                                
+                                {emitido.estado_hacienda === 'rechazado' && emitido.xml_respuesta && (
+                                    <div className="mt-4 p-4 bg-red-900/30 border border-red-500/20 rounded-2xl text-left">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-red-500 mb-2">
+                                            Razón del Rechazo:
+                                        </p>
+                                        <p className="text-red-300 text-sm font-mono whitespace-pre-wrap leading-relaxed">
+                                            {(() => {
+                                                try {
+                                                    const xml = atob(emitido.xml_respuesta);
+                                                    const match = xml.match(/<DetalleMensaje>([\s\S]*?)<\/DetalleMensaje>/);
+                                                    if (match && match[1]) {
+                                                        let msj = match[1].replace(/&#13;/g, '\n').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+                                                        // Limpiar "El comprobante fue recibido en ambiente de pruebas"
+                                                        msj = msj.replace(/Este comprobante fue recibido en el ambiente de pruebas[\s\S]*?El comprobante electrónico tiene los siguientes errores:\s*/i, '');
+                                                        return msj.trim();
+                                                    }
+                                                } catch(e) {}
+                                                return 'Por favor verifique la configuración o contacte a soporte.';
+                                            })()}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="bg-nora-blue-800/40 border border-nora-blue-700/40 rounded-2xl p-5 space-y-3">

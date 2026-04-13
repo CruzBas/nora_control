@@ -89,6 +89,7 @@ export default function IngredientsSection({
                                 <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest whitespace-nowrap">Nombre</th>
                                 <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center whitespace-nowrap">Stock</th>
                                 <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center whitespace-nowrap">Mínimo</th>
+                                <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center whitespace-nowrap">CABYS</th>
                                 <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center whitespace-nowrap">Costo (¢)</th>
                                 <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-right whitespace-nowrap">⚙️</th>
                             </tr>
@@ -96,7 +97,7 @@ export default function IngredientsSection({
                         <tbody className="divide-y divide-nora-blue-700/30">
                             {ingredients.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-nora-gray-500 italic text-sm">
+                                    <td colSpan={6} className="px-6 py-12 text-center text-nora-gray-500 italic text-sm">
                                         No hay ingredientes registrados.
                                     </td>
                                 </tr>
@@ -116,6 +117,19 @@ export default function IngredientsSection({
                                         </td>
                                         <td className="px-5 sm:px-6 py-4 text-center">
                                             <span className="text-xs text-nora-gray-400 whitespace-nowrap">{item.minimo.toLocaleString('es-CR', { maximumFractionDigits: 3 })} {item.unidad_medida}</span>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4 text-center">
+                                            {/* @ts-ignore */}
+                                            {item.codigo_cabys ? (
+                                                <span className="text-[10px] font-mono bg-nora-blue-800 text-nora-gray-400 px-2 py-1 rounded-md">
+                                                    {/* @ts-ignore */}
+                                                    {item.codigo_cabys}
+                                                </span>
+                                            ) : (
+                                                <span className="text-[10px] font-bold text-nora-danger bg-nora-danger/10 px-2 py-1 rounded-md">
+                                                    FALTA
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-5 sm:px-6 py-4 text-center">
                                             <span className="text-xs sm:text-sm font-black text-nora-accent-400 whitespace-nowrap">₡{item.costo.toLocaleString()}</span>

@@ -71,6 +71,7 @@ export default function ProductsSection() {
                             <tr>
                                 <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest whitespace-nowrap">Producto</th>
                                 <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center whitespace-nowrap">Categoría</th>
+                                <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center whitespace-nowrap">CABYS</th>
                                 <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-center whitespace-nowrap">Precio</th>
                                 <th className="px-5 sm:px-6 py-4 text-[10px] font-black text-nora-gray-500 uppercase tracking-widest text-right whitespace-nowrap">⚙️</th>
                             </tr>
@@ -78,7 +79,7 @@ export default function ProductsSection() {
                         <tbody className="divide-y divide-nora-blue-700/30">
                             {products.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-nora-gray-500 italic text-sm">
+                                    <td colSpan={5} className="px-6 py-12 text-center text-nora-gray-500 italic text-sm">
                                         No hay productos registrados.
                                     </td>
                                 </tr>
@@ -92,6 +93,17 @@ export default function ProductsSection() {
                                             <span className="text-[10px] font-black bg-nora-blue-700/50 text-nora-gray-300 px-3 py-1 rounded-full uppercase tracking-tighter sm:tracking-normal">
                                                 {product.categoria}
                                             </span>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4 text-center">
+                                            {product.codigo_cabys ? (
+                                                <span className="text-[10px] font-mono bg-nora-blue-800 text-nora-gray-400 px-2 py-1 rounded-md">
+                                                    {product.codigo_cabys}
+                                                </span>
+                                            ) : (
+                                                <span className="text-[10px] font-bold text-nora-danger bg-nora-danger/10 px-2 py-1 rounded-md">
+                                                    FALTA
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-5 sm:px-6 py-4 text-center text-nowrap">
                                             <span className="text-xs sm:text-sm font-black text-nora-accent-400">
