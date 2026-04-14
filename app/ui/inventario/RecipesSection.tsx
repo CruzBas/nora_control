@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRecipes } from '@/lib/hooks/hooks';
-import { addIngredientToRecetaAction, removeIngredientFromRecetaAction } from '@/lib/actions/receta.actions';
+import { addIngredientToRecetaAction, removeIngredientFromRecetaAction, deleteRecetaAction } from '@/lib/actions/receta.actions';
 import { useUsuario } from '@/lib/hooks/useUsuario';
 
 export default function RecipesSection() {
@@ -14,12 +14,15 @@ export default function RecipesSection() {
         selectedIngredients,
         loading,
         loadingIngredients,
-        fetchRecipeIngredients
+        fetchRecipeIngredients,
+        refresh
+
     } = useRecipes();
 
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [addingIngredient, setAddingIngredient] = useState(false);
     const [savedRecipe, setSavedRecipe] = useState(false);
+    const [deletingRecipe, setDeletingRecipe] = useState<string | null>(null);
 
     const handleSaveRecipe = async () => {
         if (!selectedProductId) return;
@@ -62,7 +65,8 @@ export default function RecipesSection() {
         }
     };
 
-    const handleDeleteIngredient = async (id: string) => {
+    const handleDeleteIngredient = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
         if (!confirm('¿Eliminar este ingrediente de la receta?')) return;
 
         try {
@@ -72,6 +76,27 @@ export default function RecipesSection() {
             }
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleDeleteRecipe = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (!confirm('¿Eliminar esta receta completa?')) return;
+        setDeletingRecipe(id);
+        try {
+            const res = await deleteRecetaAction(id);
+            if (res.success) {
+                if (selectedProductId === id) {
+                    setSelectedProductId(null);
+                }
+                await refresh();
+            } else {
+                alert("Error al eliminar: " + res.error);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setDeletingRecipe(null);
         }
     };
 
@@ -127,20 +152,39 @@ export default function RecipesSection() {
                                     {recipes.find(p => p.id === selectedProductId)?.nombre}
                                 </h4>
                                 {!loadingUsuario && isAuthorized && (
-                                    <button
-                                        onClick={handleSaveRecipe}
-                                        disabled={savedRecipe}
-                                        className={`w-full sm:w-auto px-6 py-3 rounded-xl font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] ${savedRecipe
-                                            ? 'bg-nora-success text-white shadow-nora-success/20 cursor-default'
-                                            : 'bg-nora-accent-500 hover:bg-nora-accent-400 text-white shadow-nora-accent-500/20'
-                                            }`}
-                                    >
-                                        <span className="material-symbols-outlined text-sm">
-                                            {savedRecipe ? 'check_circle' : 'save'}
-                                        </span>
-                                        {savedRecipe ? 'Guardado' : 'Guardar Receta'}
-                                    </button>
+                                    <>
+                                        <button
+                                            onClick={handleSaveRecipe}
+                                            disabled={savedRecipe}
+                                            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] ${savedRecipe
+                                                ? 'bg-nora-success text-white shadow-nora-success/20 cursor-default'
+                                                : 'bg-nora-accent-500 hover:bg-nora-accent-400 text-white shadow-nora-accent-500/20'
+                                                }`}
+                                        >
+                                            <span className="material-symbols-outlined text-sm">
+                                                {savedRecipe ? 'check_circle' : 'save'}
+                                            </span>
+                                            {savedRecipe ? 'Guardado' : 'Guardar Receta'}
+                                        </button>
+
+                                        <button
+                                            onClick={(e) => handleDeleteRecipe(e, selectedProductId)}
+                                            disabled={deletingRecipe === selectedProductId}
+                                            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] ${deletingRecipe === selectedProductId
+                                                ? 'bg-nora-danger text-white shadow-nora-danger/20 cursor-default'
+                                                : 'bg-nora-accent-500 hover:bg-nora-accent-400 text-white shadow-nora-accent-500/20'
+                                                }`}
+                                        >
+                                            <span className="material-symbols-outlined text-sm">
+                                                {deletingRecipe === selectedProductId ? 'check_circle' : 'delete'}
+                                            </span>
+                                            {deletingRecipe === selectedProductId ? 'Eliminando' : 'Eliminar Receta'}
+                                        </button>
+                                    </>
                                 )}
+
+
+
                             </div>
 
                             <div className="space-y-4">
@@ -212,7 +256,7 @@ export default function RecipesSection() {
                                                             <td className="px-5 sm:px-6 py-4 text-right">
                                                                 {!loadingUsuario && isAuthorized && (
                                                                     <button
-                                                                        onClick={() => handleDeleteIngredient(item.id)}
+                                                                        onClick={(e) => handleDeleteIngredient(e, item.id)}
                                                                         className="p-2 text-nora-gray-400 hover:text-nora-danger hover:bg-nora-danger/10 rounded-lg transition-all"
                                                                     >
                                                                         <span className="material-symbols-outlined text-sm">delete</span>
