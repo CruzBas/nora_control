@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: [
+    "haciendacostarica-signer",
+    "xadesjs",
+    "xml-crypto",
+    "@xmldom/xmldom"
+  ],
 };
 
 export default nextConfig;

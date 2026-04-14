@@ -134,41 +134,24 @@ export function buildXml(params: any): string {
 </${docName}>`;
 }
 
-/**
- * Firma XAdES-EPES ejecutando la librería haciendacostarica-signer en un proceso 
- * Node.js externo. Esto evita que el bundler de Next.js altere los objetos 
- * WebCrypto internos, que era la causa raíz del error "toUpperCase".
- */
 export async function signXmlHacienda(xmlString: string, p12Base64: string, p12Pin: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        console.log("[Signer] Ejecutando firma XAdES-EPES en proceso externo...");
+    console.log("[Signer] Ejecutando firma XAdES-EPES nativa...");
+    try {
+        const { DOMParser, XMLSerializer } = require('@xmldom/xmldom');
+        const xades = require('xadesjs');
+        xades.setNodeDependencies({ DOMParser, XMLSerializer });
+        const signer = require('haciendacostarica-signer');
 
-        const xmlBase64 = Buffer.from(xmlString).toString('base64');
-        const scriptPath = path.join(process.cwd(), 'sign-xml.js');
-        const nodePath = '/opt/homebrew/bin/node';
-
-        execFile(nodePath, [scriptPath, xmlBase64, p12Base64, p12Pin], {
-            maxBuffer: 10 * 1024 * 1024, // 10MB buffer
-            timeout: 30000, // 30 second timeout
-        }, (error, stdout, stderr) => {
-            if (error) {
-                console.error("[Signer] STDERR completo:", stderr);
-                const errorMsg = stderr?.includes('SIGN_ERROR:') 
-                    ? stderr.split('SIGN_ERROR:')[1]?.split('\n')[0]?.trim() 
-                    : error.message;
-                console.error("[Signer] Error en proceso externo:", errorMsg);
-                reject(new Error(`Firma fallida: ${errorMsg}`));
-                return;
-            }
-
-            const signedXmlBase64 = stdout.trim();
-            if (!signedXmlBase64) {
-                reject(new Error('Firma fallida: El proceso no devolvió resultado'));
-                return;
-            }
-
-            console.log("[Signer] ¡Firma XAdES-EPES completada con éxito!");
-            resolve(signedXmlBase64);
-        });
-    });
+        const originalConsoleLog = console.log;
+        console.log = () => {}; // Mute to prevent external lib garbage in logs
+        
+        const signedXmlBase64 = await signer.sign(xmlString, p12Base64, p12Pin);
+        
+        console.log = originalConsoleLog;
+        console.log("[Signer] ¡Firma XAdES-EPES completada con éxito!");
+        return signedXmlBase64;
+    } catch (err: any) {
+        console.error("[Signer] Error en firma:", err.message || err);
+        throw new Error(`Firma fallida: ${err.message || err}`);
+    }
 }
