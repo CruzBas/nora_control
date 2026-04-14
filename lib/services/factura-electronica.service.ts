@@ -245,43 +245,65 @@ export class FacturaElectronicaService extends BaseService {
                 return this.handleResponse<FacturaElectronica>(null, insertError);
             }
 
-            // 6. Call Edge Function to send to Hacienda
+            // 6. Build and sign the XML locally in Node.js
+            const { buildXml, signXmlHacienda } = await import('./hacienda-xml.helper');
+            
+            const paramsXml = {
+                tipo_documento: params.tipo_documento,
+                clave,
+                consecutivo,
+                fecha: fecha.toISOString(),
+                config: cfg,
+                receptor: (params.receptor_identificacion && params.receptor_tipo_identificacion) ? {
+                    nombre: params.receptor_nombre,
+                    identificacion: params.receptor_identificacion,
+                    tipo_identificacion: params.receptor_tipo_identificacion,
+                    email: params.receptor_email,
+                } : null,
+                detalle,
+                subtotal: params.subtotal,
+                impuesto: params.impuesto,
+                total: params.total,
+            };
+
+            const xmlBruto = buildXml(paramsXml);
+            let xmlToSubmitBase64 = Buffer.from(xmlBruto).toString('base64');
+
+            if (cfg.archivo_p12 && cfg.pin_p12) {
+                try {
+                    xmlToSubmitBase64 = await signXmlHacienda(xmlBruto, cfg.archivo_p12, cfg.pin_p12);
+                } catch (signErr: any) {
+                    console.error("Error signing locally:", signErr.message);
+                    return this.handleResponse<FacturaElectronica>(null, { 
+                        message: `No se pudo firmar el XML con su certificado P12. Detalle: ${signErr.message}` 
+                    } as any);
+                }
+            }
+
+            // 7. Call Edge Function to send to Hacienda
             const { data: fnData, error: fnError } = await supabase.functions.invoke('emitir-factura', {
                 body: {
                     factura_id: (factura as FacturaElectronica).id,
                     clave,
-                    consecutivo,
+                    // Hacienda API JSON format requirement: "2019-01-01T12:00:00-06:00" natively
+                    fecha: fecha.getFullYear() + '-' +
+                        String(fecha.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(fecha.getDate()).padStart(2, '0') + 'T' +
+                        String(fecha.getHours()).padStart(2, '0') + ':' +
+                        String(fecha.getMinutes()).padStart(2, '0') + ':' +
+                        String(fecha.getSeconds()).padStart(2, '0') + '-06:00',
                     tipo_documento: params.tipo_documento,
-                    fecha: fecha.toISOString(),
                     config: {
-                        cedula_emisor: cfg.cedula_emisor,
-                        tipo_identificacion_emisor: cfg.tipo_identificacion_emisor,
-                        nombre_emisor: cfg.nombre_emisor,
-                        nombre_comercial: cfg.nombre_comercial,
-                        codigo_actividad: cfg.codigo_actividad,
-                        provincia: cfg.provincia,
-                        canton: cfg.canton,
-                        distrito: cfg.distrito,
-                        barrio: cfg.barrio,
-                        otras_senas: cfg.otras_senas,
-                        telefono: cfg.telefono,
-                        email: cfg.email,
-                        ambiente: cfg.ambiente,
-                        usuario_hacienda: cfg.usuario_hacienda,
-                        password_hacienda: cfg.password_hacienda,
-                        archivo_p12: cfg.archivo_p12,
-                        pin_p12: cfg.pin_p12,
+                        ...cfg,
+                        cedula_emisor: (cfg.cedula_emisor || '').replace(/\D/g, '').padStart(12, '0'),
                     },
-                    receptor: params.receptor_identificacion ? {
-                        nombre: params.receptor_nombre,
-                        identificacion: params.receptor_identificacion,
-                        tipo_identificacion: params.receptor_tipo_identificacion,
-                        email: params.receptor_email,
-                    } : null,
-                    detalle,
-                    subtotal: params.subtotal,
-                    impuesto: params.impuesto,
-                    total: params.total,
+                    receptor_identificacion: (params.receptor_identificacion && params.receptor_tipo_identificacion) 
+                        ? String(params.receptor_identificacion).replace(/\D/g, '').padStart(12, '0') 
+                        : undefined,
+                    receptor_tipo_identificacion: (params.receptor_identificacion && params.receptor_tipo_identificacion) 
+                        ? params.receptor_tipo_identificacion 
+                        : undefined,
+                    xml_firmado_base64: xmlToSubmitBase64,
                 },
             });
 
@@ -300,7 +322,7 @@ export class FacturaElectronicaService extends BaseService {
                     .from(this.facturaTable)
                     .update({
                         estado_hacienda: fnData.estado || 'enviado',
-                        mensaje_hacienda: fnData.mensaje || 'Documento enviado a Hacienda',
+                        mensaje_hacienda: fnData.mensaje || (fnData.estado === 'error' ? 'Error al enviar a Hacienda' : 'Documento enviado a Hacienda'),
                         xml_enviado: fnData.xml_enviado || null,
                         updated_at: new Date().toISOString(),
                     })
@@ -403,6 +425,20 @@ export class FacturaElectronicaService extends BaseService {
                 rechazados: docs.filter(d => d.estado_hacienda === 'rechazado').length,
                 pendientes: docs.filter(d => d.estado_hacienda === 'pendiente' || d.estado_hacienda === 'enviado').length,
             }, null);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    }
+    // ─── Consult Status ────────────────────────────────────────────────
+
+    async consultarEstado(facturaId?: string): Promise<ApiResponse<any>> {
+        try {
+            const supabase = await this.getSupabase();
+            const { data, error } = await supabase.functions.invoke('consultar-estado', {
+                body: { factura_id: facturaId },
+            });
+
+            return this.handleResponse(data, error);
         } catch (error) {
             return this.handleError(error);
         }

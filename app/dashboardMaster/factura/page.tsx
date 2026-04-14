@@ -1,6 +1,8 @@
 import { getOrdenesActivasAction, getPagadasHoyAction } from '@/lib/actions/ordenes.actions';
 import FacturaClient from './FacturaClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function FacturaPage() {
     const responseActivas = await getOrdenesActivasAction();
     const ordenes = responseActivas.success ? responseActivas.data || [] : [];
