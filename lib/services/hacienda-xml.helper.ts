@@ -2,37 +2,37 @@ import { execFile } from 'child_process';
 import path from 'path';
 
 export const TIPO_DOC_NAMES: Record<string, string> = {
-    '01': 'FacturaElectronica',
-    '02': 'NotaDebitoElectronica',
-    '03': 'NotaCreditoElectronica',
-    '04': 'TiqueteElectronico',
+  '01': 'FacturaElectronica',
+  '02': 'NotaDebitoElectronica',
+  '03': 'NotaCreditoElectronica',
+  '04': 'TiqueteElectronico',
 };
 
 export const TIPO_DOC_NS: Record<string, string> = {
-    '01': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica',
-    '02': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaDebitoElectronica',
-    '03': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica',
-    '04': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/tiqueteElectronico',
+  '01': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica',
+  '02': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaDebitoElectronica',
+  '03': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica',
+  '04': 'https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/tiqueteElectronico',
 };
 
 export function escapeXml(str: any): string {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 export function buildXml(params: any): string {
-    const docName = TIPO_DOC_NAMES[params.tipo_documento] || 'FacturaElectronica';
-    const ns = TIPO_DOC_NS[params.tipo_documento] || TIPO_DOC_NS['01'];
-    const fechaISO = new Date(params.fecha).toISOString();
+  const docName = TIPO_DOC_NAMES[params.tipo_documento] || 'FacturaElectronica';
+  const ns = TIPO_DOC_NS[params.tipo_documento] || TIPO_DOC_NS['01'];
+  const fechaISO = new Date(params.fecha).toISOString();
 
-    let receptorXml = '';
-    if (params.receptor && params.receptor.identificacion) {
-        receptorXml = `
+  let receptorXml = '';
+  if (params.receptor && params.receptor.identificacion) {
+    receptorXml = `
   <Receptor>
     <Nombre>${escapeXml(params.receptor.nombre || 'Cliente')}</Nombre>
     <Identificacion>
@@ -41,21 +41,43 @@ export function buildXml(params: any): string {
     </Identificacion>
     ${params.receptor.email ? `<CorreoElectronico>${escapeXml(params.receptor.email)}</CorreoElectronico>` : ''}
   </Receptor>`;
+  }
+
+  let totalServGravados = 0;
+  let totalMercanciasGravadas = 0;
+
+  let detalleLines: string[] = [];
+  let lineaNum = 1;
+  console.log("Generando XML: items en detalle =", params.detalle?.length);
+  for (const item of params.detalle) {
+    const subtotalItem = item.precio_unitario * item.cantidad;
+    const impuestoItem = subtotalItem * 0.13;
+    const totalLinea = subtotalItem + impuestoItem;
+
+    // Clasificar como servicio o mercancía según prefijo CABYS (1-4 Bienes, 5-9 Servicios)
+    let isService = false;
+    let unidadMedida = 'Unid';
+    if (item.codigo_cabys) {
+      const firstDigit = item.codigo_cabys.charAt(0);
+      if (['5', '6', '7', '8', '9'].includes(firstDigit)) {
+        isService = true;
+        unidadMedida = 'Os'; // Otros Servicios
+      }
+    } else {
+      isService = false; 
     }
 
-    let detalleLines: string[] = [];
-    let lineaNum = 1;
-    console.log("Generando XML: items en detalle =", params.detalle?.length);
-    for (const item of params.detalle) {
-        const subtotalItem = item.precio_unitario * item.cantidad;
-        const impuestoItem = subtotalItem * 0.13;
-        const totalLinea = subtotalItem + impuestoItem;
-        detalleLines.push(`
+    if (impuestoItem > 0) {
+      if (isService) totalServGravados += subtotalItem;
+      else totalMercanciasGravadas += subtotalItem;
+    }
+
+    detalleLines.push(`
     <LineaDetalle>
       <NumeroLinea>${lineaNum}</NumeroLinea>
       ${item.codigo_cabys ? `<CodigoCABYS>${escapeXml(item.codigo_cabys)}</CodigoCABYS>` : ''}
       <Cantidad>${item.cantidad.toFixed(3)}</Cantidad>
-      <UnidadMedida>Unid</UnidadMedida>
+      <UnidadMedida>${unidadMedida}</UnidadMedida>
       <Detalle>${escapeXml(item.nombre)}</Detalle>
       <PrecioUnitario>${item.precio_unitario.toFixed(5)}</PrecioUnitario>
       <MontoTotal>${subtotalItem.toFixed(5)}</MontoTotal>
@@ -71,11 +93,13 @@ export function buildXml(params: any): string {
       <ImpuestoNeto>${impuestoItem.toFixed(5)}</ImpuestoNeto>
       <MontoTotalLinea>${totalLinea.toFixed(5)}</MontoTotalLinea>
     </LineaDetalle>`);
-        lineaNum++;
-    }
-    const cedulaEmisorClean = (params.config.cedula_emisor || '').replace(/\D/g, '');
+    lineaNum++;
+  }
+  const cedulaEmisorClean = (params.config.cedula_emisor || '').replace(/\D/g, '');
 
-    return `<?xml version="1.0" encoding="utf-8"?>
+  const totalGravadoFinal = totalServGravados + totalMercanciasGravadas;
+
+  return `<?xml version="1.0" encoding="utf-8"?>
 <${docName} xmlns="${ns}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Clave>${params.clave}</Clave>
   <ProveedorSistemas>${cedulaEmisorClean}</ProveedorSistemas>
@@ -103,21 +127,21 @@ export function buildXml(params: any): string {
   </DetalleServicio>
   <ResumenFactura>
     <CodigoTipoMoneda><CodigoMoneda>CRC</CodigoMoneda><TipoCambio>1</TipoCambio></CodigoTipoMoneda>
-    <TotalServGravados>0.00000</TotalServGravados>
+    <TotalServGravados>${totalServGravados.toFixed(5)}</TotalServGravados>
     <TotalServExentos>0.00000</TotalServExentos>
     <TotalServExonerado>0.00000</TotalServExonerado>
     <TotalServNoSujeto>0.00000</TotalServNoSujeto>
-    <TotalMercanciasGravadas>${params.subtotal.toFixed(5)}</TotalMercanciasGravadas>
+    <TotalMercanciasGravadas>${totalMercanciasGravadas.toFixed(5)}</TotalMercanciasGravadas>
     <TotalMercanciasExentas>0.00000</TotalMercanciasExentas>
     <TotalMercExonerada>0.00000</TotalMercExonerada>
     <TotalMercNoSujeta>0.00000</TotalMercNoSujeta>
-    <TotalGravado>${params.subtotal.toFixed(5)}</TotalGravado>
+    <TotalGravado>${totalGravadoFinal.toFixed(5)}</TotalGravado>
     <TotalExento>0.00000</TotalExento>
     <TotalExonerado>0.00000</TotalExonerado>
     <TotalNoSujeto>0.00000</TotalNoSujeto>
-    <TotalVenta>${params.subtotal.toFixed(5)}</TotalVenta>
+    <TotalVenta>${totalGravadoFinal.toFixed(5)}</TotalVenta>
     <TotalDescuentos>0.00000</TotalDescuentos>
-    <TotalVentaNeta>${params.subtotal.toFixed(5)}</TotalVentaNeta>
+    <TotalVentaNeta>${totalGravadoFinal.toFixed(5)}</TotalVentaNeta>
     <TotalDesgloseImpuesto>
       <Codigo>01</Codigo>
       <CodigoTarifaIVA>08</CodigoTarifaIVA>
@@ -135,23 +159,23 @@ export function buildXml(params: any): string {
 }
 
 export async function signXmlHacienda(xmlString: string, p12Base64: string, p12Pin: string): Promise<string> {
-    console.log("[Signer] Ejecutando firma XAdES-EPES nativa...");
-    try {
-        const { DOMParser, XMLSerializer } = require('@xmldom/xmldom');
-        const xades = require('xadesjs');
-        xades.setNodeDependencies({ DOMParser, XMLSerializer });
-        const signer = require('haciendacostarica-signer');
+  console.log("[Signer] Ejecutando firma XAdES-EPES nativa...");
+  try {
+    const { DOMParser, XMLSerializer } = require('@xmldom/xmldom');
+    const xades = require('xadesjs');
+    xades.setNodeDependencies({ DOMParser, XMLSerializer });
+    const signer = require('haciendacostarica-signer');
 
-        const originalConsoleLog = console.log;
-        console.log = () => {}; // Mute to prevent external lib garbage in logs
-        
-        const signedXmlBase64 = await signer.sign(xmlString, p12Base64, p12Pin);
-        
-        console.log = originalConsoleLog;
-        console.log("[Signer] ¡Firma XAdES-EPES completada con éxito!");
-        return signedXmlBase64;
-    } catch (err: any) {
-        console.error("[Signer] Error en firma:", err.message || err);
-        throw new Error(`Firma fallida: ${err.message || err}`);
-    }
+    const originalConsoleLog = console.log;
+    console.log = () => { }; // Mute to prevent external lib garbage in logs
+
+    const signedXmlBase64 = await signer.sign(xmlString, p12Base64, p12Pin);
+
+    console.log = originalConsoleLog;
+    console.log("[Signer] ¡Firma XAdES-EPES completada con éxito!");
+    return signedXmlBase64;
+  } catch (err: any) {
+    console.error("[Signer] Error en firma:", err.message || err);
+    throw new Error(`Firma fallida: ${err.message || err}`);
+  }
 }
