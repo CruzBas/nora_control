@@ -177,13 +177,25 @@ export interface FacturaElectronica extends BaseEntity {
     detalle: FacturaElectronicaDetalle[];
 }
 
+export interface ClienteFacturacion extends BaseEntity {
+    empresa_id: string;
+    nombre: string;
+    identificacion: string;
+    tipo_identificacion: TipoIdentificacion;
+    email?: string;
+    telefono?: string;
+}
+
 export interface ContribuyenteHacienda {
     nombre: string;
     tipoIdentificacion: string;
-    regimen: string;
+    regimen: {
+        codigo: string;
+        descripcion: string;
+    } | string;
     situacion: {
         estado: string;
-        administracionTributaria: string;
+        administracionTributaria?: string;
     };
     actividades: {
         codigo: string;

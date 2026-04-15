@@ -23,6 +23,13 @@ export default async function FacturaPage() {
                 </div>
                 <div className="flex gap-2">
                     <a
+                        href="/dashboardMaster/factura/clientes"
+                        className="px-4 py-2.5 bg-nora-blue-800/60 border border-nora-blue-700/50 hover:border-nora-accent-500 text-nora-gray-300 hover:text-nora-accent-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+                    >
+                        <span className="material-symbols-outlined text-sm">contacts</span>
+                        Clientes FE
+                    </a>
+                    <a
                         href="/dashboardMaster/factura/historial"
                         className="px-4 py-2.5 bg-nora-blue-800/60 border border-nora-blue-700/50 hover:border-nora-accent-500 text-nora-gray-300 hover:text-nora-accent-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
                     >

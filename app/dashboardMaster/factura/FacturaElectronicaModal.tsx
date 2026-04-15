@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Orden, TipoDocumentoFE, ContribuyenteHacienda, FacturaElectronica, ConfigFacturacion } from '@/lib/types';
+import { Orden, TipoDocumentoFE, ContribuyenteHacienda, FacturaElectronica, ConfigFacturacion, ClienteFacturacion } from '@/lib/types';
 import {
     emitirDocumentoAction,
     consultarContribuyenteAction,
@@ -10,6 +10,7 @@ import {
     consultarEstadoFEAction,
     getDocumentoFEAction,
 } from '@/lib/actions/factura-electronica.actions';
+import { getClientesFacturacionAction, createClienteFacturacionAction } from '@/lib/actions/clientes-facturacion.actions';
 import FacturaVisual from '@/app/ui/factura/FacturaVisual';
 
 
@@ -37,6 +38,8 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
     const [existingDoc, setExistingDoc] = useState<FacturaElectronica | null>(null);
     const [enrichedOrden, setEnrichedOrden] = useState<any>(null);
     const [config, setConfig] = useState<ConfigFacturacion | null>(null);
+    const [clientesGuardados, setClientesGuardados] = useState<ClienteFacturacion[]>([]);
+    const [guardarNuevoCliente, setGuardarNuevoCliente] = useState(false);
 
     useEffect(() => {
         if (isOpen && orden) {
@@ -51,6 +54,7 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
             setError('');
             setExistingDoc(null);
             setEnrichedOrden(null);
+            setGuardarNuevoCliente(false);
 
             // Fetch order with Cabys
             import('@/lib/actions/ordenes.actions').then(act => {
@@ -72,6 +76,13 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
             getConfigFacturacionAction().then(res => {
                 if (res.success && res.data) {
                     setConfig(res.data);
+                }
+            });
+
+            // Fetch saved clients
+            getClientesFacturacionAction().then(res => {
+                if (res.success && res.data) {
+                    setClientesGuardados(res.data);
                 }
             });
         }
@@ -97,11 +108,9 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
             attempts++;
             setIsPolling(true);
             const res = await consultarEstadoFEAction(emitido.id);
-            
+
             if (res.success && res.data) {
-                // If we got a real change in status, or it's just the same data
-                // The edge function should have updated the DB and returned the results
-                // Since actions revalidate, we might need to refetch or just wait for the update
+
                 const { data: updatedDoc } = await getDocumentoFEAction(emitido.id);
                 if (updatedDoc) {
                     setEmitido(updatedDoc);
@@ -111,7 +120,7 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                     }
                 }
             }
-            
+
             timer = setTimeout(poll, 5000);
         };
 
@@ -132,6 +141,17 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
         setLookupLoading(true);
         setLookupError('');
         setContribuyente(null);
+
+        // First check locally
+        const saved = clientesGuardados.find(c => c.identificacion === cedula);
+        if (saved) {
+            setReceptorNombre(saved.nombre);
+            setTipoId(saved.tipo_identificacion);
+            setReceptorEmail(saved.email || '');
+            setTipoDoc('01');
+            setLookupLoading(false);
+            return;
+        }
 
         const res = await consultarContribuyenteAction(cedula);
         if (res.success && res.data) {
@@ -192,6 +212,14 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
         });
 
         if (res.success && res.data) {
+            if (guardarNuevoCliente && tipoDoc === '01') {
+                createClienteFacturacionAction({
+                    nombre: receptorNombre,
+                    identificacion: cedula,
+                    tipo_identificacion: tipoId as any,
+                    email: receptorEmail || undefined
+                }).catch(err => console.error("Error guardando cliente:", err));
+            }
             setEmitido(res.data);
             setStep('result');
             onSuccess?.(res.data);
@@ -315,12 +343,43 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                                 </div>
                             </div>
 
-                            {/* Receptor section (only for Factura) */}
                             {tipoDoc === '01' && (
                                 <div className="space-y-4 bg-nora-blue-800/30 border border-nora-blue-700/40 rounded-2xl p-5">
-                                    <h3 className="text-[10px] font-black text-nora-gray-400 uppercase tracking-widest">
-                                        Datos del Receptor
-                                    </h3>
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="text-[10px] font-black text-nora-gray-400 uppercase tracking-widest">
+                                            Datos del Receptor
+                                        </h3>
+                                    </div>
+
+                                    {clientesGuardados.length > 0 && (
+                                        <div className="mb-2">
+                                            <label className="text-[10px] font-bold text-nora-gray-500 block mb-1">Cliente Guardado</label>
+                                            <select
+                                                onChange={(e) => {
+                                                    const cliente = clientesGuardados.find(c => c.id === e.target.value);
+                                                    if (cliente) {
+                                                        setCedula(cliente.identificacion);
+                                                        setTipoId(cliente.tipo_identificacion);
+                                                        setReceptorNombre(cliente.nombre);
+                                                        setReceptorEmail(cliente.email || '');
+                                                    } else {
+                                                        setCedula('');
+                                                        setTipoId('01');
+                                                        setReceptorNombre('');
+                                                        setReceptorEmail('');
+                                                    }
+                                                }}
+                                                className="w-full bg-nora-blue-800 border border-nora-blue-700 focus:border-nora-accent-500 text-nora-white text-xs font-bold rounded-xl p-3 outline-none"
+                                            >
+                                                <option value="">Seleccione o digite abajo...</option>
+                                                {clientesGuardados.map(c => (
+                                                    <option key={c.id} value={c.id}>
+                                                        {c.nombre} ({c.identificacion})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
 
                                     <div className="grid grid-cols-3 gap-3">
                                         <div>
@@ -374,7 +433,7 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                                             </div>
                                             <p className="text-sm font-bold text-nora-white">{contribuyente.nombre}</p>
                                             <p className="text-[10px] text-nora-gray-400 mt-0.5">
-                                                {contribuyente.situacion?.estado} — {contribuyente.regimen || 'Sin régimen'}
+                                                {contribuyente.situacion?.estado} — {typeof contribuyente.regimen === 'object' ? contribuyente.regimen.descripcion : (contribuyente.regimen || 'Sin régimen')}
                                             </p>
                                         </div>
                                     )}
@@ -399,6 +458,18 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                                             className="w-full bg-nora-blue-800 border border-nora-blue-700 focus:border-nora-accent-500 text-nora-white text-sm font-bold rounded-xl p-3 outline-none"
                                         />
                                     </div>
+
+                                    {cedula && receptorNombre && !clientesGuardados.some(c => c.identificacion === cedula) && (
+                                        <label className="flex items-center gap-2 mt-2 cursor-pointer w-fit p-2 rounded hover:bg-nora-blue-800/50 transition-colors">
+                                            <input
+                                                type="checkbox"
+                                                checked={guardarNuevoCliente}
+                                                onChange={(e) => setGuardarNuevoCliente(e.target.checked)}
+                                                className="w-4 h-4 rounded text-nora-accent-500 bg-nora-blue-800 border-nora-blue-700 focus:ring-offset-nora-blue-900 focus:ring-nora-accent-500"
+                                            />
+                                            <span className="text-[10px] font-bold text-nora-gray-400 uppercase tracking-widest">Guardar en mis clientes</span>
+                                        </label>
+                                    )}
                                 </div>
                             )}
 
@@ -499,7 +570,7 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                                 <p className="text-nora-gray-400 text-sm mt-2">
                                     {emitido.mensaje_hacienda || 'El documento fue procesado.'}
                                 </p>
-                                
+
                                 {emitido.estado_hacienda === 'rechazado' && emitido.xml_respuesta && (
                                     <div className="mt-4 p-4 bg-red-900/30 border border-red-500/20 rounded-2xl text-left">
                                         <p className="text-[11px] font-black uppercase tracking-widest text-red-500 mb-2">
@@ -516,7 +587,7 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                                                         msj = msj.replace(/Este comprobante fue recibido en el ambiente de pruebas[\s\S]*?El comprobante electrónico tiene los siguientes errores:\s*/i, '');
                                                         return msj.trim();
                                                     }
-                                                } catch(e) {}
+                                                } catch (e) { }
                                                 return 'Por favor verifique la configuración o contacte a soporte.';
                                             })()}
                                         </p>
