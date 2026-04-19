@@ -402,6 +402,24 @@ export class FacturaElectronicaService extends BaseService {
         }
     }
 
+    async getDocumentosByOrdenes(ordenIds: string[]): Promise<ApiResponse<FacturaElectronica[]>> {
+        try {
+            if (!ordenIds || ordenIds.length === 0) {
+                return this.handleResponse([], null);
+            }
+            const supabase = await this.getSupabase();
+            const { data, error } = await supabase
+                .from(this.facturaTable)
+                .select('*')
+                .in('orden_id', ordenIds)
+                .order('created_at', { ascending: false });
+
+            return this.handleResponse<FacturaElectronica[]>(data as FacturaElectronica[], error);
+        } catch (error) {
+            return this.handleError<FacturaElectronica[]>(error);
+        }
+    }
+
     // ─── Stats ──────────────────────────────────────────────────────────
 
     async getStats(): Promise<ApiResponse<{

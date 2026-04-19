@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Orden, MetodoPago, FacturaElectronica } from '@/lib/types';
+import { Orden, MetodoPago, FacturaElectronica, ConfigFacturacion } from '@/lib/types';
 import { pagarOrdenAction } from '@/lib/actions/ordenes.actions';
+import { getDocumentosByOrdenesAction, getConfigFacturacionAction } from '@/lib/actions/factura-electronica.actions';
 import FacturaElectronicaModal from './FacturaElectronicaModal';
 
 interface FacturaClientProps {
@@ -20,9 +21,42 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
     const [showFEModal, setShowFEModal] = useState(false);
     const [ordenParaFE, setOrdenParaFE] = useState<Orden | null>(null);
     const [docEmitidos, setDocEmitidos] = useState<Record<string, FacturaElectronica>>({});
+    const [configFE, setConfigFE] = useState<ConfigFacturacion | null>(null);
+    const [loadingDocs, setLoadingDocs] = useState(false);
 
     const [isSplitMode, setIsSplitMode] = useState(false);
     const [pagosList, setPagosList] = useState<{ id: string, metodo: MetodoPago, monto: number }[]>([]);
+
+    // Load config on mount
+    useEffect(() => {
+        getConfigFacturacionAction().then(res => {
+            if (res.success && res.data) setConfigFE(res.data);
+        });
+    }, []);
+
+    // Fetch linked invoices efficiently in batch
+    useEffect(() => {
+        if (cerradas.length > 0) {
+            const checkDocs = async () => {
+                const missingIds = cerradas.filter(o => !docEmitidos[o.id]).map(o => o.id);
+                if (missingIds.length === 0) return;
+                
+                setLoadingDocs(true);
+                const res = await getDocumentosByOrdenesAction(missingIds);
+                if (res.success && res.data) {
+                    const results: Record<string, FacturaElectronica> = { ...docEmitidos };
+                    res.data.forEach(doc => {
+                        if (doc.orden_id) {
+                            results[doc.orden_id] = doc;
+                        }
+                    });
+                    setDocEmitidos(results);
+                }
+                setLoadingDocs(false);
+            };
+            checkDocs();
+        }
+    }, [cerradas]);
 
     useEffect(() => {
         if (selectedOrden) {
@@ -105,6 +139,168 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
         }
     };
 
+    const handlePrintThermal = (factura: FacturaElectronica, config: ConfigFacturacion) => {
+        const fmt = (n: number) => '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 2 });
+        const isTiquete = factura.tipo_documento === '04';
+        const tipoLabel = isTiquete ? 'TIQUETE ELECTRÓNICO' : 'FACTURA ELECTRÓNICA';
+        const fecha = new Date(factura.fecha_emision);
+        const fechaStr = fecha.toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const horaStr = fecha.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+
+        const items = (factura.detalle || []).map(item => {
+            const lineTotal = fmt(item.total);
+            return `
+                <tr>
+                    <td style="padding:2px 0;font-size:11px;">${item.cantidad}x ${item.nombre}</td>
+                    <td style="padding:2px 0;font-size:11px;text-align:right;white-space:nowrap;">${lineTotal}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const receptorBlock = factura.receptor_nombre ? `
+            <div style="margin:6px 0;padding:4px 0;border-top:1px dashed #000;border-bottom:1px dashed #000;">
+                <div style="font-size:10px;color:#666;">CLIENTE:</div>
+                <div style="font-size:11px;font-weight:bold;">${factura.receptor_nombre}</div>
+                ${factura.receptor_identificacion ? `<div style="font-size:10px;color:#666;">ID: ${factura.receptor_identificacion}</div>` : ''}
+            </div>
+        ` : '';
+
+        const html = `
+            <html>
+            <head>
+                <title>Recibo - ${factura.numero_consecutivo}</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                    @page {
+                        margin: 0;
+                        size: 58mm auto;
+                    }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body {
+                        font-family: 'Courier New', Courier, monospace;
+                        width: 58mm;
+                        max-width: 58mm;
+                        margin: 0 auto;
+                        padding: 4mm 2mm;
+                        font-size: 11px;
+                        color: #000;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .center { text-align: center; }
+                    .bold { font-weight: bold; }
+                    .divider {
+                        border-top: 1px dashed #000;
+                        margin: 6px 0;
+                    }
+                    .double-divider {
+                        border-top: 2px solid #000;
+                        margin: 6px 0;
+                    }
+                    table { width: 100%; border-collapse: collapse; }
+                    .row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 1px 0;
+                        font-size: 11px;
+                    }
+                    .total-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 4px 0;
+                        font-size: 14px;
+                        font-weight: bold;
+                    }
+                    .small { font-size: 9px; color: #666; }
+                    .clave { font-size: 8px; word-break: break-all; color: #444; line-height: 1.3; }
+                    h2 { font-size: 14px; margin: 2px 0; }
+                    h3 { font-size: 11px; margin: 2px 0; font-weight: normal; }
+                </style>
+            </head>
+            <body>
+                <div class="center">
+                    <h2>${config.nombre_emisor}</h2>
+                    ${config.nombre_comercial ? `<h3>${config.nombre_comercial}</h3>` : ''}
+                    <div class="small">Cédula: ${config.cedula_emisor}</div>
+                    <div class="small">${config.distrito}, ${config.canton}</div>
+                    <div class="small">${config.provincia}</div>
+                    <div class="small">Tel: ${config.telefono}</div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="center bold" style="font-size:12px;letter-spacing:1px;">${tipoLabel}</div>
+                <div class="center small">Consecutivo: ${factura.numero_consecutivo.slice(-10)}</div>
+                <div class="center small">${fechaStr} ${horaStr}</div>
+
+                ${receptorBlock}
+
+                <div class="divider"></div>
+
+                <table>
+                    <tbody>
+                        ${items}
+                    </tbody>
+                </table>
+
+                <div class="divider"></div>
+
+                <div class="row">
+                    <span>Subtotal</span>
+                    <span>${fmt(factura.subtotal)}</span>
+                </div>
+                <div class="row">
+                    <span>IVA (13%)</span>
+                    <span>${fmt(factura.impuesto)}</span>
+                </div>
+
+                <div class="double-divider"></div>
+
+                <div class="total-row">
+                    <span>TOTAL</span>
+                    <span>${fmt(factura.total)}</span>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="center small" style="margin-top:4px;">
+                    Clave Numérica:
+                </div>
+                <div class="center clave">${factura.clave}</div>
+
+                <div class="divider"></div>
+
+                <div class="center small" style="margin:6px 0;">
+                    Documento autorizado por DGT
+                </div>
+                <div class="center small">Moneda: ${factura.moneda}</div>
+
+                <div style="margin-top:8px;" class="center">
+                    <div class="bold" style="font-size:11px;letter-spacing:2px;">¡GRACIAS!</div>
+                    <div class="small">por su preferencia</div>
+                </div>
+
+                <div style="margin-top:12px;"></div>
+
+                <script>
+                    window.onload = function() {
+                        setTimeout(function() { window.print(); }, 300);
+                        window.onafterprint = function() { window.close(); };
+                    };
+                </script>
+            </body>
+            </html>
+        `;
+
+        const printWindow = window.open('', '_blank', 'width=300,height=600');
+        if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+        }
+    };
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -173,39 +369,50 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                                 <p className="text-nora-gray-500 text-sm italic">No hay órdenes cerradas hoy.</p>
                             </div>
                         ) : (
-                            cerradas.map((orden) => (
-                                <button
-                                    key={orden.id}
-                                    onClick={() => setSelectedOrden(orden)}
-                                    className={`w-full text-left p-5 rounded-3xl border transition-all duration-300 ${selectedOrden?.id === orden.id
-                                        ? 'bg-nora-blue-800/80 border-nora-blue-600 shadow-lg'
-                                        : 'bg-nora-blue-900/40 border-nora-blue-700/40 hover:border-nora-blue-600'
-                                        }`}
-                                >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-black text-nora-gray-400 uppercase tracking-widest">
-                                            #{orden.id.slice(0, 4)}
-                                        </span>
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-nora-blue-700 text-nora-gray-300">
-                                            PAGADA
-                                        </span>
-                                    </div>
-                                    <h3 className="text-lg font-black text-nora-gray-200 mb-1 truncate">
-                                        {orden.cliente_nombre || 'Cliente'}
-                                    </h3>
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex gap-2 items-center">
-                                            <span className="material-symbols-outlined text-[14px] text-nora-gray-500">
-                                                {orden.metodo_pago === 'efectivo' ? 'payments' : orden.metodo_pago === 'tarjeta' ? 'credit_card' : orden.metodo_pago === 'sinpe' ? 'smartphone' : orden.metodo_pago === 'mixto' ? 'call_split' : 'more_horiz'}
+                            cerradas.map((orden) => {
+                                const hasDoc = !!docEmitidos[orden.id];
+                                return (
+                                    <button
+                                        key={orden.id}
+                                        onClick={() => setSelectedOrden(orden)}
+                                        className={`w-full text-left p-5 rounded-3xl border transition-all duration-300 ${selectedOrden?.id === orden.id
+                                            ? 'bg-nora-blue-800/80 border-nora-blue-600 shadow-lg'
+                                            : 'bg-nora-blue-900/40 border-nora-blue-700/40 hover:border-nora-blue-600'
+                                            }`}
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-black text-nora-gray-400 uppercase tracking-widest">
+                                                    #{orden.id.slice(0, 4)}
+                                                </span>
+                                                {hasDoc && (
+                                                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-green-500/10 text-green-400 border border-green-500/20">
+                                                        <span className="material-symbols-outlined text-[10px]">receipt_long</span>
+                                                        FE
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-nora-blue-700 text-nora-gray-300">
+                                                PAGADA
                                             </span>
-                                            <span className="text-nora-gray-400 text-[10px] font-black uppercase">{orden.metodo_pago}</span>
                                         </div>
-                                        <span className="text-nora-white font-black text-sm">
-                                            ₡{Number(orden.total).toLocaleString()}
-                                        </span>
-                                    </div>
-                                </button>
-                            ))
+                                        <h3 className="text-lg font-black text-nora-gray-200 mb-1 truncate">
+                                            {orden.cliente_nombre || 'Cliente'}
+                                        </h3>
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex gap-2 items-center">
+                                                <span className="material-symbols-outlined text-[14px] text-nora-gray-500">
+                                                    {orden.metodo_pago === 'efectivo' ? 'payments' : orden.metodo_pago === 'tarjeta' ? 'credit_card' : orden.metodo_pago === 'sinpe' ? 'smartphone' : orden.metodo_pago === 'mixto' ? 'call_split' : 'more_horiz'}
+                                                </span>
+                                                <span className="text-nora-gray-400 text-[10px] font-black uppercase">{orden.metodo_pago}</span>
+                                            </div>
+                                            <span className="text-nora-white font-black text-sm">
+                                                ₡{Number(orden.total).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </button>
+                                );
+                            })
                         )
                     )}
                 </div>
@@ -464,6 +671,17 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                                         : 'Emitir Documento Electrónico'
                                     }
                                 </button>
+
+                                {/* Re-print button for orders with linked invoice */}
+                                {docEmitidos[selectedOrden.id] && configFE && (
+                                    <button
+                                        onClick={() => handlePrintThermal(docEmitidos[selectedOrden.id], configFE)}
+                                        className="w-full mt-3 py-4 font-black rounded-2xl uppercase tracking-widest text-xs transition-all border flex items-center justify-center gap-3 bg-nora-blue-800/60 text-nora-accent-400 border-nora-accent-500/30 hover:bg-nora-accent-500 hover:text-white hover:border-nora-accent-400 shadow-lg"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">print</span>
+                                        Reimprimir Documento (58mm)
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>

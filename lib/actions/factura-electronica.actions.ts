@@ -70,6 +70,10 @@ export async function getDocumentoByOrdenAction(ordenId: string): Promise<ApiRes
     return facturaElectronicaService.getDocumentoByOrden(ordenId);
 }
 
+export async function getDocumentosByOrdenesAction(ordenIds: string[]): Promise<ApiResponse<FacturaElectronica[]>> {
+    return facturaElectronicaService.getDocumentosByOrdenes(ordenIds);
+}
+
 
 // ─── Stats ──────────────────────────────────────────────────────────
 

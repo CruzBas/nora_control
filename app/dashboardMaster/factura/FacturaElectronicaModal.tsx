@@ -231,6 +231,79 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
 
     if (!isOpen || !orden) return null;
 
+    const handlePrintThermal58mm = (factura: FacturaElectronica, cfg: ConfigFacturacion) => {
+        const fmt = (n: number) => '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 2 });
+        const isTiquete = factura.tipo_documento === '04';
+        const tipoLabel = isTiquete ? 'TIQUETE ELECTRÓNICO' : 'FACTURA ELECTRÓNICA';
+        const fecha = new Date(factura.fecha_emision);
+        const fechaStr = fecha.toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const horaStr = fecha.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+
+        const items = (factura.detalle || []).map(item => {
+            const lineTotal = fmt(item.total);
+            return `<tr><td style="padding:2px 0;font-size:11px;">${item.cantidad}x ${item.nombre}</td><td style="padding:2px 0;font-size:11px;text-align:right;white-space:nowrap;">${lineTotal}</td></tr>`;
+        }).join('');
+
+        const receptorBlock = factura.receptor_nombre ? `
+            <div style="margin:6px 0;padding:4px 0;border-top:1px dashed #000;border-bottom:1px dashed #000;">
+                <div style="font-size:10px;color:#666;">CLIENTE:</div>
+                <div style="font-size:11px;font-weight:bold;">${factura.receptor_nombre}</div>
+                ${factura.receptor_identificacion ? `<div style="font-size:10px;color:#666;">ID: ${factura.receptor_identificacion}</div>` : ''}
+            </div>` : '';
+
+        const html = `<html><head><title>Recibo - ${factura.numero_consecutivo}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                @page { margin: 0; size: 58mm auto; }
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: 'Courier New', Courier, monospace; width: 58mm; max-width: 58mm; margin: 0 auto; padding: 4mm 2mm; font-size: 11px; color: #000; }
+                .center { text-align: center; } .bold { font-weight: bold; }
+                .divider { border-top: 1px dashed #000; margin: 6px 0; }
+                .double-divider { border-top: 2px solid #000; margin: 6px 0; }
+                table { width: 100%; border-collapse: collapse; }
+                .row { display: flex; justify-content: space-between; align-items: center; padding: 1px 0; font-size: 11px; }
+                .total-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 14px; font-weight: bold; }
+                .small { font-size: 9px; color: #666; }
+                .clave { font-size: 8px; word-break: break-all; color: #444; line-height: 1.3; }
+                h2 { font-size: 14px; margin: 2px 0; } h3 { font-size: 11px; margin: 2px 0; font-weight: normal; }
+            </style></head><body>
+                <div class="center">
+                    <h2>${cfg.nombre_emisor}</h2>
+                    ${cfg.nombre_comercial ? `<h3>${cfg.nombre_comercial}</h3>` : ''}
+                    <div class="small">Cédula: ${cfg.cedula_emisor}</div>
+                    <div class="small">${cfg.distrito}, ${cfg.canton}, ${cfg.provincia}</div>
+                    <div class="small">Tel: ${cfg.telefono}</div>
+                </div>
+                <div class="divider"></div>
+                <div class="center bold" style="font-size:12px;letter-spacing:1px;">${tipoLabel}</div>
+                <div class="center small">Consecutivo: ${factura.numero_consecutivo.slice(-10)}</div>
+                <div class="center small">${fechaStr} ${horaStr}</div>
+                ${receptorBlock}
+                <div class="divider"></div>
+                <table><tbody>${items}</tbody></table>
+                <div class="divider"></div>
+                <div class="row"><span>Subtotal</span><span>${fmt(factura.subtotal)}</span></div>
+                <div class="row"><span>IVA (13%)</span><span>${fmt(factura.impuesto)}</span></div>
+                <div class="double-divider"></div>
+                <div class="total-row"><span>TOTAL</span><span>${fmt(factura.total)}</span></div>
+                <div class="divider"></div>
+                <div class="center small" style="margin-top:4px;">Clave Numérica:</div>
+                <div class="center clave">${factura.clave}</div>
+                <div class="divider"></div>
+                <div class="center small" style="margin:6px 0;">Documento autorizado por DGT</div>
+                <div class="center small">Moneda: ${factura.moneda}</div>
+                <div style="margin-top:8px;" class="center">
+                    <div class="bold" style="font-size:11px;letter-spacing:2px;">¡GRACIAS!</div>
+                    <div class="small">por su preferencia</div>
+                </div>
+                <div style="margin-top:12px;"></div>
+                <script>window.onload=function(){setTimeout(function(){window.print();},300);window.onafterprint=function(){window.close();};};</script>
+            </body></html>`;
+
+        const printWindow = window.open('', '_blank', 'width=300,height=600');
+        if (printWindow) { printWindow.document.write(html); printWindow.document.close(); }
+    };
+
     const estadoColors: Record<string, string> = {
         pendiente: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
         enviado: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
@@ -630,17 +703,26 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                                 </div>
                             )}
 
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={() => window.print()}
-                                    className="flex-1 py-4 font-black rounded-2xl uppercase tracking-widest text-sm transition-all bg-nora-accent-500 text-white hover:bg-nora-accent-400 shadow-lg shadow-nora-accent-500/10 flex items-center justify-center gap-2"
-                                >
-                                    <span className="material-symbols-outlined uppercase">print</span>
-                                    Imprimir
-                                </button>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => handlePrintThermal58mm(emitido, config!)}
+                                        className="flex-1 py-4 font-black rounded-2xl uppercase tracking-widest text-sm transition-all bg-nora-accent-500 text-white hover:bg-nora-accent-400 shadow-lg shadow-nora-accent-500/10 flex items-center justify-center gap-2"
+                                    >
+                                        <span className="material-symbols-outlined">print</span>
+                                        Ticket 58mm
+                                    </button>
+                                    <button
+                                        onClick={() => window.print()}
+                                        className="py-4 px-4 font-black rounded-2xl uppercase tracking-widest text-xs transition-all bg-nora-blue-800 text-nora-gray-300 hover:bg-nora-blue-700 border border-nora-blue-700/50 flex items-center justify-center gap-2"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">description</span>
+                                        A4
+                                    </button>
+                                </div>
                                 <button
                                     onClick={onClose}
-                                    className="flex-1 py-4 font-black rounded-2xl uppercase tracking-widest text-sm transition-all bg-nora-blue-800 text-nora-gray-300 hover:bg-nora-blue-700 border border-nora-blue-700/50"
+                                    className="w-full py-4 font-black rounded-2xl uppercase tracking-widest text-sm transition-all bg-nora-blue-800 text-nora-gray-300 hover:bg-nora-blue-700 border border-nora-blue-700/50"
                                 >
                                     Cerrar
                                 </button>
