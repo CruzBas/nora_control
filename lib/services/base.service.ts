@@ -29,6 +29,24 @@ export abstract class BaseService {
         return profile.empresa_id;
     }
 
+    protected async getOrganizacionId(): Promise<string | null> {
+        const empresaId = await this.getEmpresaId();
+        const supabase = await this.getSupabase();
+
+        const { data, error } = await supabase
+            .from('empresa')
+            .select('organizacion_id')
+            .eq('id', empresaId)
+            .maybeSingle();
+
+        if (error || !data) {
+            console.error('getOrganizacionId error:', error);
+            return null;
+        }
+
+        return data.organizacion_id;
+    }
+
     protected handleResponse<T>(data: T | null, error: any): ApiResponse<T> {
         if (error) {
             console.error(`[Service Error]:`, error);

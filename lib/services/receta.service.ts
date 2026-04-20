@@ -8,10 +8,12 @@ export class RecetaService extends BaseService {
 
     async getAll(): Promise<ApiResponse<Receta[]>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.recetaTable)
                 .select('*')
+                .eq('empresa_id', empresaId)
                 .order('nombre', { ascending: true });
 
             return this.handleResponse<Receta[]>(data, error);
@@ -22,11 +24,13 @@ export class RecetaService extends BaseService {
 
     async getById(id: string): Promise<ApiResponse<Receta>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.recetaTable)
                 .select('*')
                 .eq('id', id)
+                .eq('empresa_id', empresaId)
                 .maybeSingle();
 
             return this.handleResponse<Receta>(data, error);
@@ -73,11 +77,13 @@ export class RecetaService extends BaseService {
 
     async update(id: string, receta: Partial<Omit<Receta, 'id' | 'created_at' | 'empresa_id'>>): Promise<ApiResponse<Receta>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.recetaTable)
                 .update(receta)
                 .eq('id', id)
+                .eq('empresa_id', empresaId)
                 .select()
                 .maybeSingle();
 
@@ -89,11 +95,13 @@ export class RecetaService extends BaseService {
 
     async delete(id: string): Promise<ApiResponse<null>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { error } = await supabase
                 .from(this.recetaTable)
                 .delete()
-                .eq('id', id);
+                .eq('id', id)
+                .eq('empresa_id', empresaId);
 
             return this.handleResponse<null>(null, error);
         } catch (error) {
@@ -133,6 +141,7 @@ export class RecetaService extends BaseService {
 
     async getAllForPOS(): Promise<ApiResponse<Receta[]>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
 
 
@@ -146,6 +155,7 @@ export class RecetaService extends BaseService {
                         inventario:inventario_id(id, cantidad)
                     )
                 `)
+                .eq('empresa_id', empresaId)
                 .order('nombre', { ascending: true });
 
             if (error) return this.handleError(error);

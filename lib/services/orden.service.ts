@@ -9,10 +9,12 @@ export class OrdenService extends BaseService {
 
     async getActivas(): Promise<ApiResponse<Orden[]>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.ordenTable)
                 .select(`*, items:orden_item(*)`)
+                .eq('empresa_id', empresaId)
                 .in('estado', ['pendiente', 'lista'])
                 .order('created_at', { ascending: true });
 
@@ -25,6 +27,7 @@ export class OrdenService extends BaseService {
 
     async getTerminadasHoy(): Promise<ApiResponse<Orden[]>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -32,6 +35,7 @@ export class OrdenService extends BaseService {
             const { data, error } = await supabase
                 .from(this.ordenTable)
                 .select(`*, items:orden_item(*)`)
+                .eq('empresa_id', empresaId)
                 .in('estado', ['lista', 'pagada'])
                 .gte('created_at', today.toISOString())
                 .order('created_at', { ascending: false });
@@ -44,6 +48,7 @@ export class OrdenService extends BaseService {
 
     async getPagadasHoy(): Promise<ApiResponse<Orden[]>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -51,6 +56,7 @@ export class OrdenService extends BaseService {
             const { data, error } = await supabase
                 .from(this.ordenTable)
                 .select(`*, items:orden_item(*)`)
+                .eq('empresa_id', empresaId)
                 .eq('estado', 'pagada')
                 .gte('updated_at', today.toISOString())
                 .order('updated_at', { ascending: false });
@@ -63,6 +69,7 @@ export class OrdenService extends BaseService {
 
     async getWithCabys(id: string): Promise<ApiResponse<Orden & { items: (OrdenItem & { receta?: { codigo_cabys: string } })[] }>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.ordenTable)
@@ -74,6 +81,7 @@ export class OrdenService extends BaseService {
                     )
                 `)
                 .eq('id', id)
+                .eq('empresa_id', empresaId)
                 .single();
 
             return this.handleResponse(data as any, error);
@@ -145,7 +153,7 @@ export class OrdenService extends BaseService {
                 .from('receta')
                 .select('id, requiere_cocina')
                 .in('id', recetaIds);
-            
+
             const requiresKitchen = recipesData?.some(r => r.requiere_cocina) ?? true;
             const estadoInicial = requiresKitchen ? 'pendiente' : 'lista';
 
@@ -195,11 +203,13 @@ export class OrdenService extends BaseService {
 
     async updateEstado(id: string, estado: Orden['estado']): Promise<ApiResponse<Orden>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const dataToUpdate: any = { estado };
 
             if (estado === 'lista') {
-                const { data: order } = await supabase.from(this.ordenTable).select('created_at').eq('id', id).single();
+                const { data: order } = await supabase.from(this.ordenTable)
+                    .select('created_at').eq('id', id).eq('empresa_id', empresaId).single();
                 if (order && order.created_at) {
                     const diffMs = Date.now() - new Date(order.created_at).getTime();
                     dataToUpdate.tiempo_preparacion_minutos = Math.round(diffMs / 60000);
@@ -210,6 +220,7 @@ export class OrdenService extends BaseService {
                 .from(this.ordenTable)
                 .update(dataToUpdate)
                 .eq('id', id)
+                .eq('empresa_id', empresaId)
                 .select()
                 .maybeSingle();
 
@@ -228,16 +239,17 @@ export class OrdenService extends BaseService {
         ventasAyer: number;
     }>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const hoy = new Date().toISOString().split('T')[0];
             const ayer = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
             const [{ data: hoyData }, { data: ayerData }, { data: activas }] = await Promise.all([
-                supabase.from(this.ordenTable).select('total').eq('estado', 'pagada')
+                supabase.from(this.ordenTable).select('total').eq('empresa_id', empresaId).eq('estado', 'pagada')
                     .gte('created_at', `${hoy}T00:00:00`).lte('created_at', `${hoy}T23:59:59`),
-                supabase.from(this.ordenTable).select('total').eq('estado', 'pagada')
+                supabase.from(this.ordenTable).select('total').eq('empresa_id', empresaId).eq('estado', 'pagada')
                     .gte('created_at', `${ayer}T00:00:00`).lte('created_at', `${ayer}T23:59:59`),
-                supabase.from(this.ordenTable).select('id').in('estado', ['pendiente', 'lista']),
+                supabase.from(this.ordenTable).select('id').eq('empresa_id', empresaId).in('estado', ['pendiente', 'lista']),
             ]);
 
             const ventasHoy = (hoyData ?? []).reduce((s: number, o: { total: number }) => s + Number(o.total), 0);
@@ -251,11 +263,12 @@ export class OrdenService extends BaseService {
 
     async getVentasSemana(dias = 7): Promise<ApiResponse<{ name: string; total: number }[]>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const desde = new Date(Date.now() - (dias - 1) * 86400000).toISOString().split('T')[0];
             const { data, error } = await supabase
                 .from(this.ordenTable).select('created_at, total')
-                .eq('estado', 'pagada').gte('created_at', `${desde}T00:00:00`);
+                .eq('empresa_id', empresaId).eq('estado', 'pagada').gte('created_at', `${desde}T00:00:00`);
 
             if (error) return this.handleError(error);
 
@@ -281,9 +294,11 @@ export class OrdenService extends BaseService {
 
     async getOrdenesRecientes(limite = 10): Promise<ApiResponse<Orden[]>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.ordenTable).select('*')
+                .eq('empresa_id', empresaId)
                 .order('created_at', { ascending: false }).limit(limite);
             return this.handleResponse<Orden[]>(data as Orden[], error);
         } catch (error) {
@@ -294,11 +309,13 @@ export class OrdenService extends BaseService {
 
     async pagar(id: string, metodoPago: MetodoPago, pagos?: Record<string, number>): Promise<ApiResponse<Orden>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.ordenTable)
                 .update({ estado: 'pagada', metodo_pago: metodoPago, pagos })
                 .eq('id', id)
+                .eq('empresa_id', empresaId)
                 .select()
                 .maybeSingle();
 
@@ -318,12 +335,14 @@ export class OrdenService extends BaseService {
         ordenes: Orden[];
     }>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const hoy = new Date().toISOString().split('T')[0];
 
             const { data, error } = await supabase
                 .from(this.ordenTable)
                 .select('*')
+                .eq('empresa_id', empresaId)
                 .eq('estado', 'pagada')
                 .gte('created_at', `${hoy}T00:00:00`)
                 .lte('created_at', `${hoy}T23:59:59`);
@@ -360,6 +379,7 @@ export class OrdenService extends BaseService {
 
     async getCierresCaja(): Promise<ApiResponse<CierreCaja[]>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.cierreTable)
@@ -373,6 +393,7 @@ export class OrdenService extends BaseService {
                         )
                     )
                 `)
+                .eq('empresa_id', empresaId)
                 .order('created_at', { ascending: false });
 
             if (error) return this.handleError(error);
@@ -413,10 +434,12 @@ export class OrdenService extends BaseService {
         chartData: { name: string, value: number }[]
     }>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data: ordenes, error } = await supabase
                 .from(this.ordenTable)
                 .select('*, items:orden_item(*)')
+                .eq('empresa_id', empresaId)
                 .eq('estado', 'pagada')
                 .gte('created_at', `${fechaInicio}T00:00:00`)
                 .lte('created_at', `${fechaFin}T23:59:59`)

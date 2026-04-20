@@ -7,10 +7,12 @@ export class InventarioService extends BaseService {
 
     async getAll(): Promise<ApiResponse<Inventario[]>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.table)
                 .select('*, proveedor:proveedores(*)')
+                .eq('empresa_id', empresaId)
                 .order('producto', { ascending: true });
 
             return this.handleResponse<Inventario[]>(data, error);
@@ -21,11 +23,13 @@ export class InventarioService extends BaseService {
 
     async getById(id: string): Promise<ApiResponse<Inventario>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from(this.table)
                 .select('*, proveedor:proveedores(*)')
                 .eq('id', id)
+                .eq('empresa_id', empresaId)
                 .maybeSingle();
 
             return this.handleResponse<Inventario>(data, error);
@@ -56,11 +60,13 @@ export class InventarioService extends BaseService {
 
     async update(id: string, item: Partial<Inventario>): Promise<ApiResponse<Inventario>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await createClient();
             const { data, error } = await supabase
                 .from(this.table)
                 .update(item)
                 .eq('id', id)
+                .eq('empresa_id', empresaId)
                 .select()
                 .maybeSingle();
 
@@ -72,11 +78,13 @@ export class InventarioService extends BaseService {
 
     async delete(id: string): Promise<ApiResponse<null>> {
         try {
+            const empresaId = await this.getEmpresaId();
             const supabase = await createClient();
             const { error } = await supabase
                 .from(this.table)
                 .delete()
-                .eq('id', id);
+                .eq('id', id)
+                .eq('empresa_id', empresaId);
 
             return this.handleResponse<null>(null, error);
         } catch (error) {

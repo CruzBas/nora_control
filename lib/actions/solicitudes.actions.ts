@@ -37,10 +37,22 @@ export async function crearSolicitudAction(pagina: string, motivo: string) {
 
 export async function listarSolicitudesAction() {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, data: null, error: 'No autenticado' };
+
+    const { data: profile } = await supabase
+        .from('usuario')
+        .select('empresa_id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (!profile) return { success: false, data: null, error: 'Perfil no encontrado' };
 
     const { data, error } = await supabase
         .from('solicitud_acceso')
-        .select('*, usuario:usuario_id(nombre, apellido, email)')
+        .select('*, usuario:usuario_id!inner(nombre, apellido, email)')
+        .eq('usuario.empresa_id', profile.empresa_id)
         .order('created_at', { ascending: false });
 
     if (error) return { success: false, data: null, error: error.message };

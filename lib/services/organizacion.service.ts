@@ -6,10 +6,14 @@ export class OrganizacionService extends BaseService {
 
     async getOrganizaciones(): Promise<ApiResponse<Organizacion[]>> {
         try {
+            const orgId = await this.getOrganizacionId();
+            if (!orgId) return this.handleResponse([], null);
+
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from('organizacion')
                 .select('*, empresas:empresa(id, nombre, pais, ubicacion, organizacion_id, created_at)')
+                .eq('id', orgId)
                 .order('nombre', { ascending: true });
 
             return this.handleResponse(data as Organizacion[], error);
@@ -65,10 +69,14 @@ export class OrganizacionService extends BaseService {
 
     async getEmpresas(): Promise<ApiResponse<Empresa[]>> {
         try {
+            const orgId = await this.getOrganizacionId();
+            if (!orgId) return this.handleResponse([], null);
+
             const supabase = await this.getSupabase();
             const { data, error } = await supabase
                 .from('empresa')
                 .select('*, organizacion:organizacion_id(id, nombre)')
+                .eq('organizacion_id', orgId)
                 .order('nombre', { ascending: true });
 
             return this.handleResponse(data as Empresa[], error);
