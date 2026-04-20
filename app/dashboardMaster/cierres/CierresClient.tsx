@@ -67,12 +67,7 @@ export default function CierresClient() {
                      </div>
                   </div>
                   <script>
-                    setTimeout(function() {
-                        window.print();
-                        setTimeout(function() { 
-                            window.close();
-                        }, 500);
-                    }, 500);
+                    window.print();
                   </script>
                 </body>
                 </html>

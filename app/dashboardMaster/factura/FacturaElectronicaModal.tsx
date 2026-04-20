@@ -303,12 +303,7 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                 </div>
                 <div style="margin-top:12px;"></div>
                 <script>
-                    setTimeout(function() {
-                        window.print();
-                        setTimeout(function() { 
-                            window.close();
-                        }, 500);
-                    }, 500);
+                    window.print();
                 </script>
             </body></html>`;
 

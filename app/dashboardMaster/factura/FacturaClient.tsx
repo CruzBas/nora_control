@@ -329,12 +329,7 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                 <div style="margin-top:12px;"></div>
 
                 <script>
-                    setTimeout(function() {
-                        window.print();
-                        setTimeout(function() { 
-                            window.close();
-                        }, 500);
-                    }, 500);
+                    window.print();
                 </script>
             </body>
             </html>

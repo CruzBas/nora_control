@@ -98,12 +98,7 @@ export default function CierreCajaModal({ isOpen, onClose }: CierreCajaModalProp
                      <div class="row bold" style="font-size: 18px;"><span>TOTAL:</span><span>${fmt(data.total_general)}</span></div>
                   </div>
                   <script>
-                    setTimeout(function() {
-                        window.print();
-                        setTimeout(function() { 
-                            window.close();
-                        }, 500);
-                    }, 500);
+                    window.print();
                   </script>
                 </body>
                 </html>
