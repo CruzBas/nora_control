@@ -29,11 +29,13 @@ export default function CierresClient() {
         const windowPrint = window.open('', '', 'width=800,height=600');
         if (windowPrint) {
             windowPrint.document.write(`
+                <!DOCTYPE html>
                 <html>
                 <head>
+                <meta charset="utf-8">
                 <title>Cierre de Caja - ${cierre.fecha}</title>
                 <style>
-                    body { font-family: 'Courier New', Courier, monospace; padding: 20px; font-size: 14px; color: #000; }
+                    body { font-family: 'Courier New', Courier, monospace; padding: 20px; font-size: 14px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                     .ticket { max-width: 350px; margin: 0 auto; border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
                     h2, h3, h4 { text-align: center; margin: 5px 0; }
                     .row { display: flex; justify-content: space-between; margin: 8px 0; }
@@ -65,7 +67,12 @@ export default function CierresClient() {
                      </div>
                   </div>
                   <script>
-                    window.onload = () => { window.print(); window.close(); }
+                    setTimeout(function() {
+                        window.print();
+                        setTimeout(function() { 
+                            window.close();
+                        }, 500);
+                    }, 500);
                   </script>
                 </body>
                 </html>

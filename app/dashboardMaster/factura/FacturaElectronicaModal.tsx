@@ -256,12 +256,12 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                 ${factura.receptor_identificacion ? `<div style="font-size:10px;color:#666;">ID: ${factura.receptor_identificacion}</div>` : ''}
             </div>` : '';
 
-        const html = `<html><head><title>Recibo - ${factura.numero_consecutivo}</title>
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Recibo - ${factura.numero_consecutivo}</title>
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
                 @page { margin: 0; size: 58mm auto; }
                 * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: 'Courier New', Courier, monospace; width: 58mm; max-width: 58mm; margin: 0 auto; padding: 4mm 2mm; font-size: 11px; color: #000; }
+                body { font-family: 'Courier New', Courier, monospace; width: 58mm; max-width: 58mm; margin: 0 auto; padding: 4mm 2mm; font-size: 11px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 .center { text-align: center; } .bold { font-weight: bold; }
                 .divider { border-top: 1px dashed #000; margin: 6px 0; }
                 .double-divider { border-top: 2px solid #000; margin: 6px 0; }
@@ -299,14 +299,24 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                 <div class="center small">Moneda: ${factura.moneda}</div>
                 <div style="margin-top:8px;" class="center">
                     <div class="bold" style="font-size:11px;letter-spacing:2px;">¡GRACIAS!</div>
-                    <div class="small">por su preferencia</div>
+                    <div class="small">por su preferencecia</div>
                 </div>
                 <div style="margin-top:12px;"></div>
-                <script>window.onload=function(){setTimeout(function(){window.print();},300);window.onafterprint=function(){window.close();};};</script>
+                <script>
+                    setTimeout(function() {
+                        window.print();
+                        setTimeout(function() { 
+                            window.close();
+                        }, 500);
+                    }, 500);
+                </script>
             </body></html>`;
 
         const printWindow = window.open('', '_blank', 'width=300,height=600');
-        if (printWindow) { printWindow.document.write(html); printWindow.document.close(); }
+        if (printWindow) { 
+            printWindow.document.write(html); 
+            printWindow.document.close(); 
+        }
     };
 
     const estadoColors: Record<string, string> = {

@@ -207,8 +207,10 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
         ` : '';
 
         const html = `
+            <!DOCTYPE html>
             <html>
             <head>
+                <meta charset="utf-8">
                 <title>Recibo - ${consecutivo}</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1">
                 <style>
@@ -327,10 +329,12 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                 <div style="margin-top:12px;"></div>
 
                 <script>
-                    window.onload = function() {
-                        setTimeout(function() { window.print(); }, 300);
-                        window.onafterprint = function() { window.close(); };
-                    };
+                    setTimeout(function() {
+                        window.print();
+                        setTimeout(function() { 
+                            window.close();
+                        }, 500);
+                    }, 500);
                 </script>
             </body>
             </html>
