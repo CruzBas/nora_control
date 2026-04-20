@@ -40,6 +40,7 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
     const [config, setConfig] = useState<ConfigFacturacion | null>(null);
     const [clientesGuardados, setClientesGuardados] = useState<ClienteFacturacion[]>([]);
     const [guardarNuevoCliente, setGuardarNuevoCliente] = useState(false);
+    const [incluirIVA, setIncluirIVA] = useState(true);
 
     useEffect(() => {
         if (isOpen && orden) {
@@ -231,13 +232,17 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
 
     if (!isOpen || !orden) return null;
 
-    const handlePrintThermal58mm = (factura: FacturaElectronica, cfg: ConfigFacturacion) => {
+    const handlePrintThermal58mm = (factura: FacturaElectronica, cfg: ConfigFacturacion, forceNoIVA: boolean = false) => {
         const fmt = (n: number) => '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 2 });
         const isTiquete = factura.tipo_documento === '04';
         const tipoLabel = isTiquete ? 'TIQUETE ELECTRÓNICO' : 'FACTURA ELECTRÓNICA';
         const fecha = new Date(factura.fecha_emision);
         const fechaStr = fecha.toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const horaStr = fecha.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+
+        const subtotalPrint = factura.subtotal;
+        const impuestoPrint = forceNoIVA ? 0 : factura.impuesto;
+        const totalPrint = forceNoIVA ? factura.subtotal : factura.total;
 
         const items = (factura.detalle || []).map(item => {
             const lineTotal = fmt(item.total);
@@ -282,10 +287,10 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                 <div class="divider"></div>
                 <table><tbody>${items}</tbody></table>
                 <div class="divider"></div>
-                <div class="row"><span>Subtotal</span><span>${fmt(factura.subtotal)}</span></div>
-                <div class="row"><span>IVA (13%)</span><span>${fmt(factura.impuesto)}</span></div>
+                <div class="row"><span>Subtotal</span><span>${fmt(subtotalPrint)}</span></div>
+                <div class="row"><span>IVA (13%)</span><span>${fmt(impuestoPrint)}</span></div>
                 <div class="double-divider"></div>
-                <div class="total-row"><span>TOTAL</span><span>${fmt(factura.total)}</span></div>
+                <div class="total-row"><span>TOTAL</span><span>${fmt(totalPrint)}</span></div>
                 <div class="divider"></div>
                 <div class="center small" style="margin-top:4px;">Clave Numérica:</div>
                 <div class="center clave">${factura.clave}</div>
@@ -588,23 +593,61 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                             )}
 
                             {/* Action */}
-                            <button
-                                onClick={handleEmit}
-                                disabled={loading || !config || (tipoDoc === '01' && !cedula) || ((orden as any).items?.length === 0 && !enrichedOrden?.items)}
-                                className="w-full py-5 font-black rounded-2xl shadow-xl uppercase tracking-widest text-base transition-all bg-gradient-to-r from-nora-accent-500 to-nora-accent-400 text-white shadow-nora-accent-500/20 hover:from-nora-accent-400 hover:to-nora-accent-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                            >
-                                {loading ? (
-                                    <>
-                                        <span className="material-symbols-outlined animate-spin">progress_activity</span>
-                                        Enviando a Hacienda...
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="material-symbols-outlined">send</span>
-                                        Emitir {tipoDoc === '04' ? 'Tiquete' : 'Factura'} Electrónic{tipoDoc === '04' ? 'o' : 'a'}
-                                    </>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={handleEmit}
+                                    disabled={loading || !config || (tipoDoc === '01' && !cedula) || ((orden as any).items?.length === 0 && !enrichedOrden?.items)}
+                                    className="w-full py-5 font-black rounded-2xl shadow-xl uppercase tracking-widest text-base transition-all bg-gradient-to-r from-nora-accent-500 to-nora-accent-400 text-white shadow-nora-accent-500/20 hover:from-nora-accent-400 hover:to-nora-accent-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                                            Enviando a Hacienda...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined">send</span>
+                                            Emitir {tipoDoc === '04' ? 'Tiquete' : 'Factura'} Electrónic{tipoDoc === '04' ? 'o' : 'a'}
+                                        </>
+                                    )}
+                                </button>
+
+                                {config && (
+                                    <div className="w-full space-y-3">
+                                        <div className="flex items-center justify-center gap-3 p-2 bg-nora-blue-800/20 rounded-xl border border-nora-blue-700/30">
+                                            <input
+                                                type="checkbox"
+                                                id="modalToggleIVA"
+                                                checked={incluirIVA}
+                                                onChange={(e) => setIncluirIVA(e.target.checked)}
+                                                className="w-4 h-4 rounded text-nora-accent-500 bg-nora-blue-800 border-nora-blue-700 outline-none"
+                                            />
+                                            <label htmlFor="modalToggleIVA" className="text-[10px] font-black text-nora-gray-300 uppercase tracking-widest cursor-pointer select-none">
+                                                Incluir IVA en impresión (Solo Recibo)
+                                            </label>
+                                        </div>
+
+                                        <button
+                                            onClick={() => handlePrintThermal58mm({ 
+                                                ...orden, 
+                                                detalle: enrichedOrden?.items || (orden as any).items || [],
+                                                numero_consecutivo: orden.id.slice(0,8).toUpperCase(),
+                                                fecha_emision: new Date().toISOString(),
+                                                subtotal: Number(orden.subtotal),
+                                                impuesto: Number(orden.impuesto),
+                                                total: Number(orden.total),
+                                                moneda: 'CRC',
+                                                tipo_documento: '04', // Usar layout de tiquete
+                                                receptor_nombre: receptorNombre || orden.cliente_nombre
+                                            } as any, config, !incluirIVA)}
+                                            className="w-full py-4 font-black rounded-2xl uppercase tracking-widest text-xs transition-all border flex items-center justify-center gap-3 bg-nora-blue-800/40 text-nora-gray-300 border-nora-blue-700/50 hover:bg-nora-blue-800 hover:text-white"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">print</span>
+                                            Solo Imprimir Comprobante (Sin FE)
+                                        </button>
+                                    </div>
                                 )}
-                            </button>
+                            </div>
                         </>
                     )}
 

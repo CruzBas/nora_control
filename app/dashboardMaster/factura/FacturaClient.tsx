@@ -26,6 +26,7 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
 
     const [isSplitMode, setIsSplitMode] = useState(false);
     const [pagosList, setPagosList] = useState<{ id: string, metodo: MetodoPago, monto: number }[]>([]);
+    const [incluirIVA, setIncluirIVA] = useState(true);
 
     // Load config on mount
     useEffect(() => {
@@ -139,16 +140,56 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
         }
     };
 
-    const handlePrintThermal = (factura: FacturaElectronica, config: ConfigFacturacion) => {
+    const handlePrintThermal = (data: FacturaElectronica | (Orden & { items?: any[] }), config: ConfigFacturacion, isFE: boolean = true, forceNoIVA: boolean = false) => {
         const fmt = (n: number) => '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 2 });
-        const isTiquete = factura.tipo_documento === '04';
-        const tipoLabel = isTiquete ? 'TIQUETE ELECTRÓNICO' : 'FACTURA ELECTRÓNICA';
-        const fecha = new Date(factura.fecha_emision);
+        
+        // Determinar etiquetas y valores según sea FE o solo Recibo
+        let tipoLabel = '';
+        let consecutivo = '';
+        let fecha = new Date();
+        let items_data: any[] = [];
+        let subtotal = 0;
+        let impuesto = 0;
+        let total = 0;
+        let receptorNombre = '';
+        let receptorId = '';
+        let clave = '';
+
+        if (isFE) {
+            const factura = data as FacturaElectronica;
+            const isTiquete = factura.tipo_documento === '04';
+            tipoLabel = isTiquete ? 'TIQUETE ELECTRÓNICO' : 'FACTURA ELECTRÓNICA';
+            consecutivo = factura.numero_consecutivo.slice(-10);
+            fecha = new Date(factura.fecha_emision);
+            items_data = factura.detalle || [];
+            subtotal = factura.subtotal;
+            impuesto = factura.impuesto;
+            total = factura.total;
+            receptorNombre = factura.receptor_nombre || '';
+            receptorId = factura.receptor_identificacion || '';
+            clave = factura.clave || '';
+        } else {
+            const orden = data as (Orden & { items?: any[] });
+            tipoLabel = 'COMPROBANTE DE PAGO';
+            consecutivo = orden.id.slice(0, 8).toUpperCase();
+            fecha = new Date(orden.created_at);
+            items_data = (orden as any).items || [];
+            subtotal = orden.subtotal;
+            impuesto = orden.impuesto;
+            total = orden.total;
+            receptorNombre = orden.cliente_nombre || '';
+
+            if (forceNoIVA) {
+                impuesto = 0;
+                total = subtotal;
+            }
+        }
+
         const fechaStr = fecha.toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const horaStr = fecha.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
 
-        const items = (factura.detalle || []).map(item => {
-            const lineTotal = fmt(item.total);
+        const itemsHtml = items_data.map(item => {
+            const lineTotal = fmt(item.total || (item.precio * item.cantidad));
             return `
                 <tr>
                     <td style="padding:2px 0;font-size:11px;">${item.cantidad}x ${item.nombre}</td>
@@ -157,18 +198,18 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
             `;
         }).join('');
 
-        const receptorBlock = factura.receptor_nombre ? `
+        const receptorBlock = receptorNombre ? `
             <div style="margin:6px 0;padding:4px 0;border-top:1px dashed #000;border-bottom:1px dashed #000;">
                 <div style="font-size:10px;color:#666;">CLIENTE:</div>
-                <div style="font-size:11px;font-weight:bold;">${factura.receptor_nombre}</div>
-                ${factura.receptor_identificacion ? `<div style="font-size:10px;color:#666;">ID: ${factura.receptor_identificacion}</div>` : ''}
+                <div style="font-size:11px;font-weight:bold;">${receptorNombre}</div>
+                ${receptorId ? `<div style="font-size:10px;color:#666;">ID: ${receptorId}</div>` : ''}
             </div>
         ` : '';
 
         const html = `
             <html>
             <head>
-                <title>Recibo - ${factura.numero_consecutivo}</title>
+                <title>Recibo - ${consecutivo}</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1">
                 <style>
                     @page {
@@ -232,7 +273,7 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                 <div class="divider"></div>
 
                 <div class="center bold" style="font-size:12px;letter-spacing:1px;">${tipoLabel}</div>
-                <div class="center small">Consecutivo: ${factura.numero_consecutivo.slice(-10)}</div>
+                <div class="center small">${isFE ? 'Consecutivo:' : 'Orden:'} ${consecutivo}</div>
                 <div class="center small">${fechaStr} ${horaStr}</div>
 
                 ${receptorBlock}
@@ -241,7 +282,7 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
 
                 <table>
                     <tbody>
-                        ${items}
+                        ${itemsHtml}
                     </tbody>
                 </table>
 
@@ -249,33 +290,34 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
 
                 <div class="row">
                     <span>Subtotal</span>
-                    <span>${fmt(factura.subtotal)}</span>
+                    <span>${fmt(subtotal)}</span>
                 </div>
                 <div class="row">
                     <span>IVA (13%)</span>
-                    <span>${fmt(factura.impuesto)}</span>
+                    <span>${fmt(impuesto)}</span>
                 </div>
 
                 <div class="double-divider"></div>
 
                 <div class="total-row">
                     <span>TOTAL</span>
-                    <span>${fmt(factura.total)}</span>
+                    <span>${fmt(total)}</span>
                 </div>
 
-                <div class="divider"></div>
+                ${isFE ? `
+                    <div class="divider"></div>
+                    <div class="center small" style="margin-top:4px;">Clave Numérica:</div>
+                    <div class="center clave">${clave}</div>
+                    <div class="divider"></div>
+                    <div class="center small" style="margin:6px 0;">Documento autorizado por DGT</div>
+                ` : `
+                    <div class="divider"></div>
+                    <div class="center bold small" style="margin:6px 0; color: #000;">
+                        DOCUMENTO NO VÁLIDO PARA<br>FACTURA ELECTRÓNICA
+                    </div>
+                `}
 
-                <div class="center small" style="margin-top:4px;">
-                    Clave Numérica:
-                </div>
-                <div class="center clave">${factura.clave}</div>
-
-                <div class="divider"></div>
-
-                <div class="center small" style="margin:6px 0;">
-                    Documento autorizado por DGT
-                </div>
-                <div class="center small">Moneda: ${factura.moneda}</div>
+                <div class="center small">Moneda: CRC</div>
 
                 <div style="margin-top:8px;" class="center">
                     <div class="bold" style="font-size:11px;letter-spacing:2px;">¡GRACIAS!</div>
@@ -672,14 +714,40 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                                     }
                                 </button>
 
+                                {/* Simple box receipt (Always available for closed orders) */}
+                                {configFE && (
+                                    <div className="w-full mt-4 space-y-3 pb-2">
+                                        <div className="flex items-center justify-center gap-3 p-2 bg-nora-blue-900/60 rounded-xl border border-nora-blue-700/30">
+                                            <input
+                                                type="checkbox"
+                                                id="toggleIVA"
+                                                checked={incluirIVA}
+                                                onChange={(e) => setIncluirIVA(e.target.checked)}
+                                                className="w-4 h-4 rounded text-nora-accent-500 bg-nora-blue-800 border-nora-blue-700 outline-none"
+                                            />
+                                            <label htmlFor="toggleIVA" className="text-[10px] font-black text-nora-gray-300 uppercase tracking-widest cursor-pointer select-none">
+                                                Incluir IVA en impresión (Solo Recibo)
+                                            </label>
+                                        </div>
+
+                                        <button
+                                            onClick={() => handlePrintThermal(selectedOrden, configFE, false, !incluirIVA)}
+                                            className="w-full py-4 font-black rounded-2xl uppercase tracking-widest text-xs transition-all border flex items-center justify-center gap-3 bg-nora-blue-800/40 text-nora-gray-300 border-nora-blue-700/50 hover:bg-nora-blue-800 hover:text-white hover:border-nora-blue-600 shadow-md"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">print</span>
+                                            Imprimir Comprobante (Sin FE)
+                                        </button>
+                                    </div>
+                                )}
+
                                 {/* Re-print button for orders with linked invoice */}
                                 {docEmitidos[selectedOrden.id] && configFE && (
                                     <button
-                                        onClick={() => handlePrintThermal(docEmitidos[selectedOrden.id], configFE)}
+                                        onClick={() => handlePrintThermal(docEmitidos[selectedOrden.id], configFE, true)}
                                         className="w-full mt-3 py-4 font-black rounded-2xl uppercase tracking-widest text-xs transition-all border flex items-center justify-center gap-3 bg-nora-blue-800/60 text-nora-accent-400 border-nora-accent-500/30 hover:bg-nora-accent-500 hover:text-white hover:border-nora-accent-400 shadow-lg"
                                     >
                                         <span className="material-symbols-outlined text-lg">print</span>
-                                        Reimprimir Documento (58mm)
+                                        Reimprimir Factura Electrónica (58mm)
                                     </button>
                                 )}
                             </div>
