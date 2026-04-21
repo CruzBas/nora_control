@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Orden, MetodoPago, FacturaElectronica, ConfigFacturacion } from '@/lib/types';
 import { pagarOrdenAction } from '@/lib/actions/ordenes.actions';
 import { getDocumentosByOrdenesAction, getConfigFacturacionAction } from '@/lib/actions/factura-electronica.actions';
+import { getTipoCambioAction } from '@/lib/actions/tipoCambio.actions';
 import FacturaElectronicaModal from './FacturaElectronicaModal';
 
 interface FacturaClientProps {
@@ -28,11 +29,25 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
     const [pagosList, setPagosList] = useState<{ id: string, metodo: MetodoPago, monto: number }[]>([]);
     const [incluirIVA, setIncluirIVA] = useState(true);
 
-    // Load config on mount
+    // Currency state
+    const [moneda, setMoneda] = useState<'CRC' | 'USD'>('CRC');
+    const [tipoCambio, setTipoCambio] = useState(458);
+    const [tcFuente, setTcFuente] = useState('');
+    const [tcFecha, setTcFecha] = useState('');
+    const [tcLoading, setTcLoading] = useState(false);
+
+    // Load config and exchange rate on mount
     useEffect(() => {
         getConfigFacturacionAction().then(res => {
             if (res.success && res.data) setConfigFE(res.data);
         });
+        // Fetch live exchange rate
+        setTcLoading(true);
+        getTipoCambioAction().then(tc => {
+            setTipoCambio(tc.venta);
+            setTcFuente(tc.fuente);
+            setTcFecha(tc.fecha);
+        }).catch(() => {}).finally(() => setTcLoading(false));
     }, []);
 
     // Fetch linked invoices efficiently in batch
@@ -63,18 +78,31 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
         if (selectedOrden) {
             setMetodoPago('efectivo');
             setIsSplitMode(false);
-            setPagosList([{ id: Date.now().toString(), metodo: 'efectivo', monto: selectedOrden.total }]);
+            const total = moneda === 'USD' && tipoCambio > 0
+                ? parseFloat((selectedOrden.total / tipoCambio).toFixed(2))
+                : selectedOrden.total;
+            setPagosList([{ id: Date.now().toString(), metodo: 'efectivo', monto: total }]);
         }
-    }, [selectedOrden]);
+    }, [selectedOrden, moneda, tipoCambio]);
+
+    // Compute the "working total" depending on the selected currency and IVA setting
+    const baseTotal = selectedOrden 
+        ? (incluirIVA ? selectedOrden.total : selectedOrden.subtotal) 
+        : 0;
+
+    const workingTotal = selectedOrden && moneda === 'USD' && tipoCambio > 0
+        ? parseFloat((baseTotal / tipoCambio).toFixed(2))
+        : baseTotal;
 
     const handleAutoSplit = (n: number) => {
         if (!selectedOrden || n < 1) return;
-        const splitAmount = Math.floor((selectedOrden.total / n));
+        const total = workingTotal;
+        const splitAmount = parseFloat((total / n).toFixed(2));
         const newPagos = [];
         let runningTotal = 0;
         for (let i = 0; i < n; i++) {
             const isLast = i === n - 1;
-            const monto = isLast ? (selectedOrden.total - runningTotal) : splitAmount;
+            const monto = isLast ? parseFloat((total - runningTotal).toFixed(2)) : splitAmount;
             runningTotal += monto;
             newPagos.push({ id: (Date.now() + i).toString(), metodo: 'efectivo' as MetodoPago, monto });
         }
@@ -82,8 +110,8 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
     };
 
     const addPagoLine = () => {
-        const remaining = selectedOrden ? selectedOrden.total - pagosList.reduce((sum, p) => sum + p.monto, 0) : 0;
-        setPagosList([...pagosList, { id: Date.now().toString(), metodo: 'efectivo', monto: remaining > 0 ? remaining : 0 }]);
+        const remaining = workingTotal - pagosList.reduce((sum, p) => sum + p.monto, 0);
+        setPagosList([...pagosList, { id: Date.now().toString(), metodo: 'efectivo', monto: remaining > 0 ? parseFloat(remaining.toFixed(2)) : 0 }]);
     };
 
     const updatePago = (id: string, field: 'metodo' | 'monto', value: any) => {
@@ -98,10 +126,12 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
     };
 
     const currentTotalPaid = pagosList.reduce((sum, p) => sum + p.monto, 0);
-    const unassignedAmount = selectedOrden ? selectedOrden.total - currentTotalPaid : 0;
+    const unassignedAmount = workingTotal - currentTotalPaid;
     const isReadyToPay = isSplitMode 
         ? Math.abs(unassignedAmount) < 0.01 && pagosList.length > 0
         : true;
+
+    const currencySymbol = moneda === 'USD' ? '$' : '₡';
 
     const handlePagar = async () => {
         if (!selectedOrden) return;
@@ -116,11 +146,13 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
             if (isSplitMode) {
                 const pagosRecord: Record<string, number> = {};
                 for (const p of pagosList) {
-                    pagosRecord[p.metodo] = Number((pagosRecord[p.metodo] || 0)) + Number(p.monto);
+                    // If USD, convert each split amount back to CRC for internal storage
+                    const montoColones = moneda === 'USD' ? Math.round(p.monto * tipoCambio) : Number(p.monto);
+                    pagosRecord[p.metodo] = Number((pagosRecord[p.metodo] || 0)) + montoColones;
                 }
-                res = await pagarOrdenAction(selectedOrden.id, 'mixto', pagosRecord);
+                res = await pagarOrdenAction(selectedOrden.id, 'mixto', pagosRecord, moneda, tipoCambio, !incluirIVA);
             } else {
-                res = await pagarOrdenAction(selectedOrden.id, metodoPago);
+                res = await pagarOrdenAction(selectedOrden.id, metodoPago, undefined, moneda, tipoCambio, !incluirIVA);
             }
 
             if (res.success && res.data) {
@@ -232,6 +264,16 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                     }
                     .center { text-align: center; }
                     .bold { font-weight: bold; }
+                    .logo-container {
+                        text-align: center;
+                        margin-bottom: 8px;
+                    }
+                    .logo-img {
+                        max-width: 40mm;
+                        max-height: 25mm;
+                        object-fit: contain;
+                        filter: grayscale(1);
+                    }
                     .divider {
                         border-top: 1px dashed #000;
                         margin: 6px 0;
@@ -264,6 +306,11 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
             </head>
             <body>
                 <div class="center">
+                    ${config.logo_url ? `
+                        <div class="logo-container">
+                            <img src="${config.logo_url}" class="logo-img" />
+                        </div>
+                    ` : ''}
                     <h2>${config.nombre_emisor}</h2>
                     ${config.nombre_comercial ? `<h3>${config.nombre_comercial}</h3>` : ''}
                     <div class="small">Cédula: ${config.cedula_emisor}</div>
@@ -534,6 +581,119 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
 
                         {selectedOrden.estado !== 'pagada' ? (
                             <>
+                                {/* IVA & Currency Settings */}
+                                <div className="bg-nora-blue-900/40 rounded-2xl border border-nora-blue-700/50 p-4 space-y-4">
+                                    <div className="flex items-center justify-between px-2 pb-2 border-b border-nora-blue-700/30">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIncluirIVA(!incluirIVA)}
+                                            className="flex items-center gap-3 group"
+                                        >
+                                            <div
+                                                style={{
+                                                    width: 40,
+                                                    height: 22,
+                                                    borderRadius: 11,
+                                                    backgroundColor: incluirIVA ? '#D17A22' : '#374151',
+                                                    position: 'relative',
+                                                    transition: 'background-color 0.2s ease',
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        width: 18,
+                                                        height: 18,
+                                                        borderRadius: '50%',
+                                                        backgroundColor: '#fff',
+                                                        position: 'absolute',
+                                                        top: 2,
+                                                        left: incluirIVA ? 20 : 2,
+                                                        transition: 'left 0.2s ease',
+                                                    }}
+                                                />
+                                            </div>
+                                            <span className="text-[10px] font-black text-nora-gray-300 uppercase tracking-widest select-none group-hover:text-nora-white transition-colors">
+                                                {incluirIVA ? 'IVA Incluido (13%)' : 'Sin IVA'}
+                                            </span>
+                                        </button>
+                                        {!incluirIVA && (
+                                            <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20 animate-pulse">
+                                                EXENTO
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex p-1 bg-nora-blue-800/60 rounded-xl border border-nora-blue-700/30">
+                                        <button 
+                                            onClick={() => setMoneda('CRC')}
+                                            className={`flex-1 py-2.5 px-3 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${moneda === 'CRC' ? 'bg-nora-accent-500 text-white shadow-lg shadow-nora-accent-500/20' : 'text-nora-gray-400 hover:text-nora-gray-200'}`}
+                                        >
+                                            🇨🇷 Colones (CRC)
+                                        </button>
+                                        <button 
+                                            onClick={() => setMoneda('USD')}
+                                            className={`flex-1 py-2.5 px-3 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${moneda === 'USD' ? 'bg-nora-accent-500 text-white shadow-lg shadow-nora-accent-500/20' : 'text-nora-gray-400 hover:text-nora-gray-200'}`}
+                                        >
+                                            🇺🇸 Dólares (USD)
+                                        </button>
+                                    </div>
+
+                                    {moneda === 'USD' && (
+                                        <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-[10px] text-nora-gray-500 font-black uppercase tracking-widest">Tipo de Cambio (Venta)</p>
+                                                {tcLoading ? (
+                                                    <div className="animate-spin rounded-full h-3 w-3 border-t border-nora-accent-400" />
+                                                ) : (
+                                                    <button 
+                                                        onClick={async () => {
+                                                            setTcLoading(true);
+                                                            try {
+                                                                const tc = await getTipoCambioAction();
+                                                                setTipoCambio(tc.venta);
+                                                                setTcFuente(tc.fuente);
+                                                                setTcFecha(tc.fecha);
+                                                            } catch {} finally { setTcLoading(false); }
+                                                        }}
+                                                        className="text-[9px] text-nora-accent-400 font-bold hover:text-nora-accent-300 transition-colors flex items-center gap-1"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[12px]">refresh</span>
+                                                        Actualizar
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nora-accent-400 font-black text-sm">₡</span>
+                                                <input 
+                                                    type="number"
+                                                    value={tipoCambio}
+                                                    onChange={(e) => setTipoCambio(parseFloat(e.target.value) || 0)}
+                                                    step="0.01"
+                                                    className="w-full bg-nora-blue-800 border border-nora-blue-700 rounded-xl py-3 px-8 text-sm text-white font-black text-center focus:ring-1 focus:ring-nora-accent-500 outline-none"
+                                                />
+                                            </div>
+                                            {tcFuente && (
+                                                <div className="flex items-center justify-center gap-2 flex-wrap">
+                                                    <span className="bg-green-500/10 text-green-400 text-[8px] px-2 py-1 rounded-full border border-green-500/20 font-black uppercase tracking-widest">
+                                                        {tcFuente}
+                                                    </span>
+                                                    {tcFecha && (
+                                                        <span className="text-[8px] text-nora-gray-500 font-bold">
+                                                            {tcFecha}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <div className="text-center pt-1">
+                                                <p className="text-[10px] text-nora-accent-400/70 font-bold">
+                                                    Total USD: <span className="text-lg font-black text-nora-accent-400">${tipoCambio > 0 ? (Number(selectedOrden.total) / tipoCambio).toFixed(2) : '—'}</span>
+                                                </p>
+                                                <p className="text-[9px] text-nora-gray-600">Equivale a ₡{Number(selectedOrden.total).toLocaleString('es-CR')} en reportes</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                                 {!isSplitMode ? (
                                     <div>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-6 border-y border-nora-blue-700/50">
@@ -605,11 +765,12 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                                                         <option value="otro">OTRO</option>
                                                     </select>
                                                     <div className="relative w-full sm:flex-1">
-                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nora-accent-400 text-sm font-black">₡</span>
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nora-accent-400 text-sm font-black">{currencySymbol}</span>
                                                         <input
                                                             type="number"
                                                             value={p.monto === 0 ? '' : p.monto}
                                                             onChange={e => updatePago(p.id, 'monto', Number(e.target.value))}
+                                                            step={moneda === 'USD' ? '0.01' : '1'}
                                                             className="w-full bg-nora-blue-800 border border-nora-blue-700 focus:border-nora-accent-500 text-nora-white text-sm font-black rounded-xl p-3 pl-8 outline-none"
                                                             placeholder="0"
                                                         />
@@ -634,8 +795,8 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                                             </button>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-[10px] font-black text-nora-gray-400 tracking-widest uppercase">Restante:</span>
-                                                <span className={`text-lg font-black ${unassignedAmount === 0 ? 'text-green-400' : unassignedAmount < 0 ? 'text-nora-danger' : 'text-yellow-400'}`}>
-                                                    {unassignedAmount === 0 ? 'COMPLETO' : `₡${Math.abs(unassignedAmount).toLocaleString()}`}
+                                                <span className={`text-lg font-black ${Math.abs(unassignedAmount) < 0.01 ? 'text-green-400' : unassignedAmount < 0 ? 'text-nora-danger' : 'text-yellow-400'}`}>
+                                                    {Math.abs(unassignedAmount) < 0.01 ? 'COMPLETO' : `${currencySymbol}${Math.abs(unassignedAmount).toLocaleString(moneda === 'USD' ? 'en-US' : 'es-CR', { minimumFractionDigits: moneda === 'USD' ? 2 : 0 })}`}
                                                 </span>
                                             </div>
                                         </div>
@@ -644,10 +805,23 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
 
                                 <div className="space-y-4 pt-4">
                                     <div className="flex justify-between items-end">
-                                        <span className="text-nora-gray-400 font-bold uppercase tracking-widest text-xs">Total a Pagar</span>
-                                        <span className="text-4xl font-black text-nora-white">
-                                            ₡{Number(selectedOrden.total).toLocaleString()}
-                                        </span>
+                                        <div>
+                                            <span className="text-nora-gray-400 font-bold uppercase tracking-widest text-xs block">Total a Pagar</span>
+                                            {moneda === 'USD' && (
+                                                <span className="text-[10px] text-nora-accent-400/60 font-bold">Pagado en USD → registrado en CRC</span>
+                                            )}
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-4xl font-black text-nora-white">
+                                                {moneda === 'CRC'
+                                                    ? `₡${Number(baseTotal).toLocaleString()}`
+                                                    : `$${tipoCambio > 0 ? (Number(baseTotal) / tipoCambio).toFixed(2) : '—'}`
+                                                }
+                                            </span>
+                                            {moneda === 'USD' && (
+                                                <span className="block text-xs text-nora-gray-500 font-bold">₡{Number(baseTotal).toLocaleString()}</span>
+                                            )}
+                                        </div>
                                     </div>
                                     <button
                                         onClick={handlePagar}
@@ -717,16 +891,39 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                                 {configFE && (
                                     <div className="w-full mt-4 space-y-3 pb-2">
                                         <div className="flex items-center justify-center gap-3 p-2 bg-nora-blue-900/60 rounded-xl border border-nora-blue-700/30">
-                                            <input
-                                                type="checkbox"
-                                                id="toggleIVA"
-                                                checked={incluirIVA}
-                                                onChange={(e) => setIncluirIVA(e.target.checked)}
-                                                className="w-4 h-4 rounded text-nora-accent-500 bg-nora-blue-800 border-nora-blue-700 outline-none"
-                                            />
-                                            <label htmlFor="toggleIVA" className="text-[10px] font-black text-nora-gray-300 uppercase tracking-widest cursor-pointer select-none">
-                                                Incluir IVA en impresión (Solo Recibo)
-                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIncluirIVA(!incluirIVA)}
+                                                className="flex items-center gap-3 group"
+                                            >
+                                                <div
+                                                    style={{
+                                                        width: 36,
+                                                        height: 20,
+                                                        borderRadius: 10,
+                                                        backgroundColor: incluirIVA ? '#D17A22' : '#374151',
+                                                        position: 'relative',
+                                                        transition: 'background-color 0.2s ease',
+                                                        flexShrink: 0,
+                                                    }}
+                                                >
+                                                    <div
+                                                        style={{
+                                                            width: 16,
+                                                            height: 16,
+                                                            borderRadius: '50%',
+                                                            backgroundColor: '#fff',
+                                                            position: 'absolute',
+                                                            top: 2,
+                                                            left: incluirIVA ? 18 : 2,
+                                                            transition: 'left 0.2s ease',
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span className="text-[10px] font-black text-nora-gray-300 uppercase tracking-widest select-none group-hover:text-nora-white transition-colors">
+                                                    {incluirIVA ? 'IVA en Recibo' : 'Sin IVA en Recibo'}
+                                                </span>
+                                            </button>
                                         </div>
 
                                         <button

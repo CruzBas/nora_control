@@ -12,7 +12,7 @@ interface CartItem {
     quantity: number;
     notes?: string;
     extras?: { nombre: string, precio: number }[];
-    uniqueKey: string; // added to handle multiple versions of same product
+    uniqueKey: string;
 }
 
 interface CartAsideProps {
@@ -24,6 +24,8 @@ interface CartAsideProps {
     subtotal: number;
     total: number;
     showToast: boolean;
+    incluirIVA: boolean;
+    onToggleIVA: (val: boolean) => void;
 }
 
 export default function CartAside({
@@ -34,7 +36,9 @@ export default function CartAside({
     onCheckout,
     subtotal,
     total,
-    showToast
+    showToast,
+    incluirIVA,
+    onToggleIVA
 }: CartAsideProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -98,11 +102,11 @@ export default function CartAside({
                             <div className="flex-1 min-w-0">
                                 <h4 className="text-xs font-bold text-nora-white truncate">{item.name}</h4>
                                 <p className="text-[10px] text-nora-accent-400 font-black">₡{item.price.toLocaleString('es-CR')}</p>
-                                
+
                                 {item.notes && (
                                     <p className="text-[9px] text-nora-gray-400 italic mt-1 line-clamp-1">"{item.notes}"</p>
                                 )}
-                                
+
                                 {item.extras && item.extras.length > 0 && (
                                     <div className="flex flex-wrap gap-1 mt-1">
                                         {item.extras.map((extra, idx) => (
@@ -145,14 +149,57 @@ export default function CartAside({
         ${!isExpanded ? 'hidden lg:block' : 'block'}
       `}>
                 <div className="space-y-2">
+                    {/* IVA Toggle — styled button */}
+                    <div className="flex items-center justify-between px-1 mb-2">
+                        <button
+                            type="button"
+                            onClick={() => onToggleIVA(!incluirIVA)}
+                            className="flex items-center gap-3 group"
+                        >
+                            <div
+                                style={{
+                                    width: 36,
+                                    height: 20,
+                                    borderRadius: 10,
+                                    backgroundColor: incluirIVA ? '#D17A22' : '#374151',
+                                    position: 'relative',
+                                    transition: 'background-color 0.2s ease',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: 16,
+                                        height: 16,
+                                        borderRadius: '50%',
+                                        backgroundColor: '#fff',
+                                        position: 'absolute',
+                                        top: 2,
+                                        left: incluirIVA ? 18 : 2,
+                                        transition: 'left 0.2s ease',
+                                    }}
+                                />
+                            </div>
+                            <span className="text-[10px] font-black text-nora-gray-300 uppercase tracking-widest select-none group-hover:text-nora-white transition-colors">
+                                {incluirIVA ? 'IVA Incluido (13%)' : 'Sin IVA'}
+                            </span>
+                        </button>
+                        {!incluirIVA && (
+                            <span className="text-[8px] font-black text-yellow-500 uppercase tracking-widest bg-yellow-500/10 px-1.5 py-0.5 rounded-full border border-yellow-500/20 animate-pulse">
+                                EXENTO
+                            </span>
+                        )}
+                    </div>
                     <div className="flex justify-between items-center px-1">
                         <span className="text-nora-gray-400 text-xs font-medium tracking-wide">Subtotal</span>
                         <span className="font-bold text-nora-gray-200 text-sm">₡{subtotal.toLocaleString('es-CR')}</span>
                     </div>
-                    <div className="flex justify-between items-center px-1">
-                        <span className="text-nora-gray-400 text-xs font-medium tracking-wide">IVA (13%)</span>
-                        <span className="font-bold text-nora-gray-200 text-sm">₡{(total - subtotal).toLocaleString('es-CR')}</span>
-                    </div>
+                    {incluirIVA && (
+                        <div className="flex justify-between items-center px-1 animate-in fade-in duration-200">
+                            <span className="text-nora-gray-400 text-xs font-medium tracking-wide">IVA (13%)</span>
+                            <span className="font-bold text-nora-gray-200 text-sm">₡{Math.round(subtotal * 0.13).toLocaleString('es-CR')}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="h-px bg-linear-to-r from-transparent via-nora-blue-600 to-transparent w-full opacity-50" />

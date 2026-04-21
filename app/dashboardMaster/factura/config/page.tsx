@@ -95,9 +95,27 @@ export default function ConfigFacturacionPage() {
         const reader = new FileReader();
         reader.onload = (event) => {
             const base64 = event.target?.result as string;
-            // Remove prefix: data:application/x-pkcs12;base64,...
+            // Remove prefix for p12: data:application/x-pkcs12;base64,...
             const base64Content = base64.split(',')[1];
             update('archivo_p12', base64Content);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Limit size to 1MB
+        if (file.size > 1024 * 1024) {
+            setError('El logo debe ser menor a 1MB.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64 = event.target?.result as string;
+            update('logo_url', base64);
         };
         reader.readAsDataURL(file);
     };
@@ -189,6 +207,51 @@ export default function ConfigFacturacionPage() {
                     <option value="sandbox">Sandbox</option>
                     <option value="produccion">Producción</option>
                 </select>
+            </div>
+
+            {/* Logo Configuration */}
+            <div className="bg-nora-blue-900/40 border border-nora-blue-700/50 rounded-3xl p-6 space-y-5">
+                <h2 className="text-[10px] font-black text-nora-accent-400 uppercase tracking-widest flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">image</span>
+                    Logo de la Empresa (Tiquetes)
+                </h2>
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                    <div className="w-32 h-32 rounded-2xl bg-nora-blue-800 border-2 border-dashed border-nora-blue-700 flex items-center justify-center overflow-hidden group relative">
+                        {config.logo_url ? (
+                            <>
+                                <img src={config.logo_url} alt="Logo" className="w-full h-full object-contain p-2" />
+                                <button 
+                                    onClick={() => update('logo_url', '')}
+                                    className="absolute inset-0 bg-nora-danger/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                >
+                                    <span className="material-symbols-outlined">delete</span>
+                                </button>
+                            </>
+                        ) : (
+                            <span className="material-symbols-outlined text-nora-gray-600 text-3xl">add_photo_alternate</span>
+                        )}
+                    </div>
+                    <div className="flex-1 space-y-3">
+                        <p className="text-xs text-nora-gray-400">
+                            Sube el logo que aparecerá en la parte superior de tus comprobantes de pago (no electrónicos). 
+                            Se recomienda una imagen en blanco y negro o de alto contraste para mejor calidad en impresoras térmicas.
+                        </p>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoChange}
+                            className="hidden"
+                            id="logo-upload"
+                        />
+                        <label
+                            htmlFor="logo-upload"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-nora-blue-800 text-nora-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-nora-blue-700 transition-colors cursor-pointer"
+                        >
+                            <span className="material-symbols-outlined text-sm">upload</span>
+                            {config.logo_url ? 'Cambiar Logo' : 'Subir Logo'}
+                        </label>
+                    </div>
+                </div>
             </div>
 
             {/* Emisor Data */}

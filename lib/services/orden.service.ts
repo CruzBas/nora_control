@@ -95,14 +95,15 @@ export class OrdenService extends BaseService {
     async create(
         clienteNombre: string,
         items: { receta_id: string; nombre: string; precio: number; cantidad: number; notas?: string | null; extras?: any[] | null }[],
-        observaciones?: string
+        observaciones?: string,
+        incluirIVA: boolean = true
     ): Promise<ApiResponse<Orden>> {
         try {
             const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
 
             const subtotal = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
-            const impuesto = Math.round(subtotal * 0.13 * 100) / 100;
+            const impuesto = incluirIVA ? Math.round(subtotal * 0.13 * 100) / 100 : 0;
             const total = Math.round((subtotal + impuesto) * 100) / 100;
 
 
@@ -326,19 +327,34 @@ export class OrdenService extends BaseService {
         metodoPago: MetodoPago, 
         pagos?: Record<string, number>,
         moneda: 'CRC' | 'USD' = 'CRC',
-        tipo_cambio: number = 525
+        tipo_cambio: number = 525,
+        excluirIVA: boolean = false
     ): Promise<ApiResponse<Orden>> {
         try {
             const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
             
-            const updateData: any = { 
+            let updateData: any = { 
                 estado: 'pagada', 
                 metodo_pago: metodoPago, 
                 pagos,
                 moneda,
                 tipo_cambio
             };
+
+            // If IVA is excluded, adjust total and tax
+            if (excluirIVA) {
+                const { data: current } = await supabase
+                    .from(this.ordenTable)
+                    .select('subtotal')
+                    .eq('id', id)
+                    .single();
+                
+                if (current) {
+                    updateData.total = current.subtotal;
+                    updateData.impuesto = 0;
+                }
+            }
 
             const { data, error } = await supabase
                 .from(this.ordenTable)

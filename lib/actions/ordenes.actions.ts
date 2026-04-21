@@ -42,9 +42,10 @@ export async function getOrdenesRecientesAction(limite = 10) {
 export async function createOrdenAction(
     clienteNombre: string,
     items: { receta_id: string; nombre: string; precio: number; cantidad: number; notas?: string | null; extras?: any[] | null }[],
-    observaciones?: string
+    observaciones?: string,
+    incluirIVA: boolean = true
 ): Promise<ApiResponse<Orden>> {
-    const response = await ordenService.create(clienteNombre, items, observaciones);
+    const response = await ordenService.create(clienteNombre, items, observaciones, incluirIVA);
     if (response.success) {
         revalidatePath('/dashboardCajero/ventas');
         revalidatePath('/dashboardCajero');
@@ -76,10 +77,12 @@ export async function pagarOrdenAction(
     metodoPago: MetodoPago, 
     pagos?: Record<string, number>,
     moneda: 'CRC' | 'USD' = 'CRC',
-    tipoCambio: number = 525
+    tipoCambio: number = 525,
+    excluirIVA: boolean = false
 ): Promise<ApiResponse<Orden>> {
-    const response = await ordenService.pagar(ordenId, metodoPago, pagos, moneda, tipoCambio);
+    const response = await ordenService.pagar(ordenId, metodoPago, pagos, moneda, tipoCambio, excluirIVA);
     if (response.success) {
+        revalidatePath('/dashboardMaster/factura'); // Revalidate the billing page
         revalidatePath('/dashboardCajero');
         revalidatePath('/dashboardCajero/ventas');
     }

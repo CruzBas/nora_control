@@ -148,6 +148,7 @@ export interface ConfigFacturacion extends BaseEntity {
     codigo_terminal: string;
     pin_p12?: string;
     archivo_p12?: string;
+    logo_url?: string | null;
 }
 
 export interface FacturaElectronicaDetalle {

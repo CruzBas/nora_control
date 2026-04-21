@@ -263,6 +263,8 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { font-family: 'Courier New', Courier, monospace; width: 58mm; max-width: 58mm; margin: 0 auto; padding: 4mm 2mm; font-size: 11px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 .center { text-align: center; } .bold { font-weight: bold; }
+                .logo-container { text-align: center; margin-bottom: 8px; }
+                .logo-img { max-width: 40mm; max-height: 25mm; object-fit: contain; filter: grayscale(1); }
                 .divider { border-top: 1px dashed #000; margin: 6px 0; }
                 .double-divider { border-top: 2px solid #000; margin: 6px 0; }
                 table { width: 100%; border-collapse: collapse; }
@@ -273,6 +275,11 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                 h2 { font-size: 14px; margin: 2px 0; } h3 { font-size: 11px; margin: 2px 0; font-weight: normal; }
             </style></head><body>
                 <div class="center">
+                    ${cfg.logo_url ? `
+                        <div class="logo-container">
+                            <img src="${cfg.logo_url}" class="logo-img" />
+                        </div>
+                    ` : ''}
                     <h2>${cfg.nombre_emisor}</h2>
                     ${cfg.nombre_comercial ? `<h3>${cfg.nombre_comercial}</h3>` : ''}
                     <div class="small">Cédula: ${cfg.cedula_emisor}</div>

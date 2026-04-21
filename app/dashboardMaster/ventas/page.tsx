@@ -33,6 +33,7 @@ export default function VentasPage() {
     const [toastMsg, setToastMsg] = useState('¡Orden enviada a cocina!');
     const [activeCategory, setActiveCategory] = useState('all');
     const [checkoutLoading, setCheckoutLoading] = useState(false);
+    const [incluirIVA, setIncluirIVA] = useState(true);
 
     const categories = useMemo(() => [...new Set(products.map(p => p.categoria))].sort(), [products]);
 
@@ -87,7 +88,7 @@ export default function VentasPage() {
         return acc + (i.precio + itemExtrasPrice) * i.quantity;
     }, 0);
     const impuesto = subtotal * 0.13;
-    const total = subtotal + impuesto;
+    const total = incluirIVA ? subtotal + impuesto : subtotal;
 
     const handleConfirmOrder = async (clienteNombre: string, observaciones: string) => {
         setCheckoutLoading(true);
@@ -101,7 +102,7 @@ export default function VentasPage() {
                 extras: i.extras
             }));
 
-            const res = await createOrdenAction(clienteNombre, items, observaciones || undefined);
+            const res = await createOrdenAction(clienteNombre, items, observaciones || undefined, incluirIVA);
             if (res.success) {
                 clearCart();
                 setIsCheckoutOpen(false);
@@ -193,6 +194,8 @@ export default function VentasPage() {
                 subtotal={subtotal}
                 total={total}
                 showToast={false}
+                incluirIVA={incluirIVA}
+                onToggleIVA={setIncluirIVA}
             />
 
             <CustomizeProductModal
