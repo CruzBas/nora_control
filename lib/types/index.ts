@@ -75,6 +75,8 @@ export interface OrdenItem extends BaseEntity {
     precio: number;
     cantidad: number;
     requiere_cocina: boolean;
+    notas?: string | null;
+    extras?: { nombre: string, precio: number }[] | null;
 }
 
 export interface Orden extends BaseEntity {
@@ -88,6 +90,9 @@ export interface Orden extends BaseEntity {
     subtotal: number;
     impuesto: number;
     total: number;
+    moneda?: 'CRC' | 'USD'; // Added for currency selection
+    total_usd?: number; // Added for reference
+    tipo_cambio?: number; // Added for reference
     items?: OrdenItem[];
 }
 

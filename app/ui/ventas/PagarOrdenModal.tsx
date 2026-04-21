@@ -22,6 +22,8 @@ import Modal from '../common/Modal';
 
 export default function PagarOrdenModal({ orden, onClose, onSuccess }: PagarOrdenModalProps) {
     const [selectedMethod, setSelectedMethod] = useState<MetodoPago | null>(null);
+    const [moneda, setMoneda] = useState<'CRC' | 'USD'>('CRC');
+    const [tipoCambio, setTipoCambio] = useState(525);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +34,9 @@ export default function PagarOrdenModal({ orden, onClose, onSuccess }: PagarOrde
         setLoading(true);
         setError(null);
         try {
-            const res = await pagarOrdenAction(orden.id, selectedMethod);
+            // Note: In the action, we'll ensure conversion happens if needed, 
+            // but the user wants the total in CRC for reports.
+            const res = await pagarOrdenAction(orden.id, selectedMethod, undefined, moneda, tipoCambio);
             if (res.success) {
                 onSuccess();
                 onClose();
@@ -46,18 +50,55 @@ export default function PagarOrdenModal({ orden, onClose, onSuccess }: PagarOrde
         }
     };
 
+    const totalUSD = (orden.total / tipoCambio).toFixed(2);
+
     return (
         <Modal isOpen={!!orden} onClose={onClose} title="Cobrar Orden">
             <div className="space-y-6">
-                <div className="text-center p-4 bg-nora-blue-900/40 rounded-3xl border border-nora-blue-700/30">
-                    <p className="text-nora-gray-400 text-xs font-black uppercase tracking-widest mb-1">{orden.cliente_nombre}</p>
-                    <div className="text-4xl font-black text-nora-accent-400">
-                        ₡{orden.total.toLocaleString('es-CR')}
+                <div className="flex justify-center p-1 bg-nora-blue-900/60 rounded-2xl border border-nora-blue-700/50 mb-4">
+                    <button 
+                        onClick={() => setMoneda('CRC')}
+                        className={`flex-1 py-3 px-4 rounded-xl font-black text-xs transition-all ${moneda === 'CRC' ? 'bg-nora-accent-500 text-white shadow-lg shadow-nora-accent-500/20' : 'text-nora-gray-400 hover:text-nora-gray-200'}`}
+                    >
+                        Colones (CRC)
+                    </button>
+                    <button 
+                        onClick={() => setMoneda('USD')}
+                        className={`flex-1 py-3 px-4 rounded-xl font-black text-xs transition-all ${moneda === 'USD' ? 'bg-nora-accent-500 text-white shadow-lg shadow-nora-accent-500/20' : 'text-nora-gray-400 hover:text-nora-gray-200'}`}
+                    >
+                        Dólares (USD)
+                    </button>
+                </div>
+
+                <div className="text-center p-6 bg-nora-blue-900/40 rounded-3xl border border-nora-blue-700/30 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span className="material-symbols-outlined text-6xl">payments</span>
                     </div>
+                    <p className="text-nora-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">{orden.cliente_nombre}</p>
+                    <div className="text-4xl font-black text-nora-accent-400 mb-2">
+                        {moneda === 'CRC' ? `₡${orden.total.toLocaleString('es-CR')}` : `$${totalUSD}`}
+                    </div>
+                    {moneda === 'USD' && (
+                        <div className="flex flex-col items-center gap-2 mt-4 animate-in fade-in slide-in-from-top-2">
+                            <p className="text-[10px] text-nora-gray-500 font-black uppercase tracking-widest">Tipo de Cambio</p>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nora-accent-400 font-black text-xs">₡</span>
+                                <input 
+                                    type="number"
+                                    value={tipoCambio}
+                                    onChange={(e) => setTipoCambio(parseInt(e.target.value) || 0)}
+                                    className="bg-nora-blue-800 border border-nora-blue-700 rounded-xl py-2 px-8 text-xs text-white font-black w-32 text-center focus:ring-1 focus:ring-nora-accent-500 outline-none"
+                                />
+                            </div>
+                            <p className="text-[10px] text-nora-accent-400/60 font-bold mt-1">
+                                Equivale a: ₡{orden.total.toLocaleString('es-CR')}
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {error && (
-                    <div className="p-3 bg-nora-danger/10 border border-nora-danger/30 rounded-xl text-nora-danger text-xs font-bold text-center">
+                    <div className="p-3 bg-nora-danger/10 border border-nora-danger/30 rounded-xl text-nora-danger text-[10px] font-black uppercase tracking-widest text-center">
                         {error}
                     </div>
                 )}
@@ -67,13 +108,13 @@ export default function PagarOrdenModal({ orden, onClose, onSuccess }: PagarOrde
                         <button
                             key={id}
                             onClick={() => setSelectedMethod(id)}
-                            className={`group p-4 border-2 rounded-2xl flex flex-col items-center transition-all duration-300 active:scale-95 ${selectedMethod === id
-                                    ? 'border-nora-accent-500 bg-nora-accent-500/10'
-                                    : 'border-nora-blue-700 hover:border-nora-accent-500/50 hover:bg-nora-accent-500/5'
+                            className={`group p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 active:scale-95 ${selectedMethod === id
+                                    ? 'border-nora-accent-500 bg-nora-accent-500/10 shadow-lg shadow-nora-accent-500/5'
+                                    : 'border-nora-blue-700 hover:border-nora-accent-500/30 hover:bg-nora-accent-500/5'
                                 }`}
                         >
                             <Icon className={`h-6 w-6 ${color} mb-2 ${selectedMethod === id ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
-                            <span className={`font-bold text-xs ${selectedMethod === id ? 'text-nora-white' : 'text-nora-gray-300'}`}>
+                            <span className={`font-black uppercase tracking-widest text-[10px] ${selectedMethod === id ? 'text-nora-white' : 'text-nora-gray-400'}`}>
                                 {name}
                             </span>
                         </button>
@@ -84,18 +125,18 @@ export default function PagarOrdenModal({ orden, onClose, onSuccess }: PagarOrde
                     <button
                         disabled={!selectedMethod || loading}
                         onClick={handlePagar}
-                        className="w-full py-4 bg-nora-success text-nora-white font-black rounded-2xl shadow-lg shadow-nora-success/20 active:scale-[0.98] transition-all enabled:hover:brightness-110 disabled:opacity-50 uppercase tracking-widest text-sm flex items-center justify-center gap-2"
+                        className="w-full py-4.5 bg-nora-success text-nora-white font-black rounded-2xl shadow-xl shadow-nora-success/20 active:scale-[0.98] transition-all enabled:hover:brightness-110 disabled:opacity-50 uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3"
                     >
                         {loading ? (
-                            <><div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white" />Procesando...</>
+                            <><div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white" />PROCESANDO...</>
                         ) : (
-                            <>✅ Confirmar Pago</>
+                            <><span className="material-symbols-outlined">verified_user</span>Confirmar Pago</>
                         )}
                     </button>
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="w-full mt-3 py-3 text-nora-gray-500 font-bold hover:text-nora-gray-300 transition-colors text-xs uppercase tracking-widest"
+                        className="w-full mt-3 py-3 text-nora-gray-500 font-bold hover:text-nora-gray-300 transition-colors text-[10px] uppercase tracking-[0.2em]"
                     >
                         Cancelar
                     </button>
@@ -104,3 +145,4 @@ export default function PagarOrdenModal({ orden, onClose, onSuccess }: PagarOrde
         </Modal>
     );
 }
+

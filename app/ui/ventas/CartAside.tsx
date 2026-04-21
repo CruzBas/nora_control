@@ -5,17 +5,20 @@ import { useState } from 'react';
 import Toast from '@/app/ui/ventas/Toast';
 
 interface CartItem {
-    id: string;
+    id: string; // receta_id
     name: string;
     price: number;
     category: string;
     quantity: number;
+    notes?: string;
+    extras?: { nombre: string, precio: number }[];
+    uniqueKey: string; // added to handle multiple versions of same product
 }
 
 interface CartAsideProps {
     items: CartItem[];
-    onRemove: (id: string) => void;
-    onUpdateQuantity: (id: string, delta: number) => void;
+    onRemove: (uniqueKey: string) => void;
+    onUpdateQuantity: (uniqueKey: string, delta: number) => void;
     onClear: () => void;
     onCheckout: () => void;
     subtotal: number;
@@ -86,34 +89,48 @@ export default function CartAside({
                 ) : (
                     items.map((item) => (
                         <div
-                            key={item.id}
+                            key={item.uniqueKey}
                             className="flex items-center p-3 bg-linear-to-r from-nora-blue-900/40 to-nora-blue-900/60 rounded-2xl border border-nora-blue-700 group hover:border-nora-accent-500/50 transition-all animate-in slide-in-from-right-2 duration-200"
                         >
-                            <div className="w-10 h-10 bg-nora-blue-800 rounded-xl flex items-center justify-center text-xl mr-3 shadow-lg">
+                            <div className="w-10 h-10 bg-nora-blue-800 rounded-xl flex items-center justify-center text-xl mr-3 shadow-lg shrink-0">
                                 {item.category === 'drinks' ? '🥤' : item.category === 'food' ? '🍔' : '🍱'}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h4 className="text-xs font-bold text-nora-white truncate">{item.name}</h4>
                                 <p className="text-[10px] text-nora-accent-400 font-black">₡{item.price.toLocaleString('es-CR')}</p>
+                                
+                                {item.notes && (
+                                    <p className="text-[9px] text-nora-gray-400 italic mt-1 line-clamp-1">"{item.notes}"</p>
+                                )}
+                                
+                                {item.extras && item.extras.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {item.extras.map((extra, idx) => (
+                                            <span key={idx} className="bg-nora-accent-500/10 text-nora-accent-400 text-[8px] px-1.5 py-0.5 rounded border border-nora-accent-500/20 font-black">
+                                                +{extra.nombre}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <div className="flex items-center space-x-2 bg-nora-blue-800 rounded-lg p-1 border border-nora-blue-700 shadow-inner">
+                            <div className="flex items-center space-x-2 bg-nora-blue-800 rounded-lg p-1 border border-nora-blue-700 shadow-inner shrink-0">
                                 <button
-                                    onClick={() => onUpdateQuantity(item.id, -1)}
+                                    onClick={() => onUpdateQuantity(item.uniqueKey, -1)}
                                     className="w-6 h-6 flex items-center justify-center text-nora-gray-400 hover:text-nora-white hover:bg-nora-blue-600 rounded transition-colors"
                                 >
                                     <MinusIcon className="h-3 w-3" />
                                 </button>
                                 <span className="text-[10px] font-black text-nora-white w-4 text-center">{item.quantity}</span>
                                 <button
-                                    onClick={() => onUpdateQuantity(item.id, 1)}
+                                    onClick={() => onUpdateQuantity(item.uniqueKey, 1)}
                                     className="w-6 h-6 flex items-center justify-center text-nora-gray-400 hover:text-nora-white hover:bg-nora-blue-600 rounded transition-colors"
                                 >
                                     <PlusIcon className="h-3 w-3" />
                                 </button>
                             </div>
                             <button
-                                onClick={() => onRemove(item.id)}
-                                className="ml-2 p-2 text-nora-gray-500 hover:text-nora-danger rounded-lg transition-colors"
+                                onClick={() => onRemove(item.uniqueKey)}
+                                className="ml-1 p-1.5 text-nora-gray-500 hover:text-nora-danger rounded-lg transition-colors shrink-0"
                             >
                                 <TrashIcon className="h-4 w-4" />
                             </button>

@@ -126,13 +126,29 @@ export default function CocinaPage() {
                         <p className="text-nora-gray-400 text-sm font-medium">
                             {(orden.items ?? []).reduce((a, i) => a + i.cantidad, 0)} ítems
                         </p>
-                        <div className="mt-4 space-y-1">
+                        <div className="mt-4 space-y-2">
                             {(orden.items ?? []).filter(i => i.requiere_cocina !== false).map(item => (
-                                <div key={item.id} className="flex items-center gap-2 text-xs text-nora-gray-400">
-                                    <span className="w-5 h-5 bg-nora-blue-700/50 rounded-full flex items-center justify-center font-black text-nora-gray-300 text-[10px]">
-                                        {item.cantidad}
-                                    </span>
-                                    <span className="truncate">{item.nombre}</span>
+                                <div key={item.id} className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2 text-xs text-nora-gray-200">
+                                        <span className="w-5 h-5 bg-nora-blue-700/50 rounded-full flex items-center justify-center font-black text-nora-gray-300 text-[10px] shrink-0">
+                                            {item.cantidad}
+                                        </span>
+                                        <span className="font-bold truncate">{item.nombre}</span>
+                                    </div>
+                                    {item.notas && (
+                                        <p className="text-[10px] text-nora-danger font-black uppercase ml-7 italic">
+                                            ⚠️ {item.notas}
+                                        </p>
+                                    )}
+                                    {item.extras && item.extras.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 ml-7">
+                                            {item.extras.map((extra: any, idx: number) => (
+                                                <span key={idx} className="bg-nora-accent-500/10 text-nora-accent-400 text-[8px] px-1 py-0.5 rounded border border-nora-accent-500/30 font-black">
+                                                    +{extra.nombre}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -174,6 +190,20 @@ export default function CocinaPage() {
                                     </div>
                                     <div className="flex-1">
                                         <h3 className="font-bold text-nora-gray-100 uppercase tracking-tight">{item.nombre}</h3>
+                                        {item.notas && (
+                                            <p className="text-[10px] text-nora-danger font-black uppercase mt-1 italic">
+                                                ⚠️ {item.notas}
+                                            </p>
+                                        )}
+                                        {item.extras && item.extras.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {item.extras.map((extra: any, idx: number) => (
+                                                    <span key={idx} className="bg-nora-accent-500/10 text-nora-accent-400 text-[8px] px-1.5 py-0.5 rounded border border-nora-accent-500/30 font-black">
+                                                        +{extra.nombre}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

@@ -41,7 +41,7 @@ export async function getOrdenesRecientesAction(limite = 10) {
 
 export async function createOrdenAction(
     clienteNombre: string,
-    items: { receta_id: string; nombre: string; precio: number; cantidad: number }[],
+    items: { receta_id: string; nombre: string; precio: number; cantidad: number; notas?: string | null; extras?: any[] | null }[],
     observaciones?: string
 ): Promise<ApiResponse<Orden>> {
     const response = await ordenService.create(clienteNombre, items, observaciones);
@@ -71,8 +71,14 @@ export async function marcarOrdenListaAction(ordenId: string, itemsParaDescontar
 }
 
 
-export async function pagarOrdenAction(ordenId: string, metodoPago: MetodoPago, pagos?: Record<string, number>): Promise<ApiResponse<Orden>> {
-    const response = await ordenService.pagar(ordenId, metodoPago, pagos);
+export async function pagarOrdenAction(
+    ordenId: string, 
+    metodoPago: MetodoPago, 
+    pagos?: Record<string, number>,
+    moneda: 'CRC' | 'USD' = 'CRC',
+    tipoCambio: number = 525
+): Promise<ApiResponse<Orden>> {
+    const response = await ordenService.pagar(ordenId, metodoPago, pagos, moneda, tipoCambio);
     if (response.success) {
         revalidatePath('/dashboardCajero');
         revalidatePath('/dashboardCajero/ventas');

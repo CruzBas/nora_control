@@ -8,20 +8,27 @@ import CartAside from '@/app/ui/ventas/CartAside';
 import CheckoutModal from '@/app/ui/ventas/CheckoutModal';
 import CierreCajaModal from '@/app/ui/ventas/CierreCajaModal';
 import Toast from '@/app/ui/ventas/Toast';
-import { usePOSProducts } from '@/lib/hooks/hooks';
+import CustomizeProductModal from '@/app/ui/ventas/CustomizeProductModal';
+import { usePOSProducts, useInventory } from '@/lib/hooks/hooks';
 import { createOrdenAction } from '@/lib/actions/ordenes.actions';
 import { Receta } from '@/lib/types';
 
 interface CartItem extends Receta {
     quantity: number;
+    notes?: string;
+    extras?: { inventario_id: string; nombre: string, precio: number }[];
 }
 
 export default function VentasPage() {
     const { products, loading, error } = usePOSProducts();
+    const { ingredients: insumos } = useInventory(); // Fetch ingredients for extras
 
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [isCierreOpen, setIsCierreOpen] = useState(false);
+    const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<Receta | null>(null);
+
     const [showToast, setShowToast] = useState(false);
     const [toastMsg, setToastMsg] = useState('¡Orden enviada a cocina!');
     const [activeCategory, setActiveCategory] = useState('all');
@@ -34,22 +41,51 @@ export default function VentasPage() {
         [products, activeCategory]
     );
 
-    const addToCart = (product: Receta) => {
+    const handleProductClick = (product: Receta) => {
+        setSelectedProduct(product);
+        setIsCustomizeOpen(true);
+    };
+
+    const addToCart = (customData: { quantity: number; notes: string; extras: any[] }) => {
+        if (!selectedProduct) return;
+
         setCart(prev => {
-            const existing = prev.find(i => i.id === product.id);
-            if (existing) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-            return [...prev, { ...product, quantity: 1 }];
+            // We check for items that are identical (same product, same notes, same extras)
+            const sameExtras = (e1: any[], e2: any[]) => {
+                if (e1.length !== e2.length) return false;
+                return e1.every(extra => e2.some(e => e.inventario_id === extra.inventario_id));
+            };
+
+            const existingIndex = prev.findIndex(i => 
+                i.id === selectedProduct.id && 
+                i.notes === customData.notes && 
+                sameExtras(i.extras || [], customData.extras)
+            );
+
+            if (existingIndex > -1) {
+                const newCart = [...prev];
+                newCart[existingIndex].quantity += customData.quantity;
+                return newCart;
+            }
+
+            return [...prev, { ...selectedProduct, ...customData }];
         });
     };
 
-    const removeFromCart = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
+    const removeFromCart = (id: string, notes?: string) => {
+        // Find by id and notes to be safe, though id in cart is recipe_id
+        setCart(prev => prev.filter(i => !(i.id === id && i.notes === notes)));
+    };
 
-    const updateQuantity = (id: string, delta: number) =>
-        setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i));
+    const updateQuantity = (id: string, delta: number, notes?: string) =>
+        setCart(prev => prev.map(i => (i.id === id && i.notes === notes) ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i));
 
     const clearCart = () => setCart([]);
 
-    const subtotal = cart.reduce((acc, i) => acc + i.precio * i.quantity, 0);
+    const subtotal = cart.reduce((acc, i) => {
+        const itemExtrasPrice = (i.extras || []).reduce((sum, e) => sum + e.precio, 0);
+        return acc + (i.precio + itemExtrasPrice) * i.quantity;
+    }, 0);
     const impuesto = subtotal * 0.13;
     const total = subtotal + impuesto;
 
@@ -59,8 +95,10 @@ export default function VentasPage() {
             const items = cart.map(i => ({
                 receta_id: i.id,
                 nombre: i.nombre,
-                precio: i.precio,
+                precio: i.precio + (i.extras || []).reduce((sum, e) => sum + e.precio, 0),
                 cantidad: i.quantity,
+                notas: i.notes,
+                extras: i.extras
             }));
 
             const res = await createOrdenAction(clienteNombre, items, observaciones || undefined);
@@ -81,8 +119,15 @@ export default function VentasPage() {
     };
 
 
-    const cartForAside = cart.map(i => ({
-        id: i.id, name: i.nombre, price: i.precio, category: i.categoria, quantity: i.quantity,
+    const cartForAside = cart.map((i, index) => ({
+        id: i.id, 
+        name: i.nombre, 
+        price: i.precio + (i.extras || []).reduce((sum, e) => sum + e.precio, 0), 
+        category: i.categoria, 
+        quantity: i.quantity,
+        notes: i.notes,
+        extras: i.extras,
+        uniqueKey: `${i.id}-${index}` // to avoid duplicate keys in list
     }));
 
     return (
@@ -125,7 +170,7 @@ export default function VentasPage() {
                                         category: product.categoria,
                                         stock_disponible: product.stock_disponible
                                     }}
-                                    onClick={() => addToCart(product)}
+                                    onClick={() => handleProductClick(product)}
                                 />
                             ))}
                         </div>
@@ -135,13 +180,27 @@ export default function VentasPage() {
 
             <CartAside
                 items={cartForAside}
-                onRemove={removeFromCart}
-                onUpdateQuantity={updateQuantity}
+                onRemove={(id) => {
+                    const item = cartForAside.find(i => i.id === id);
+                    removeFromCart(id, item?.notes);
+                }}
+                onUpdateQuantity={(id, delta) => {
+                    const item = cartForAside.find(i => i.id === id);
+                    updateQuantity(id, delta, item?.notes);
+                }}
                 onClear={clearCart}
                 onCheckout={() => setIsCheckoutOpen(true)}
                 subtotal={subtotal}
                 total={total}
                 showToast={false}
+            />
+
+            <CustomizeProductModal
+                isOpen={isCustomizeOpen}
+                onClose={() => setIsCustomizeOpen(false)}
+                product={selectedProduct ? { id: selectedProduct.id, name: selectedProduct.nombre, price: selectedProduct.precio } : null}
+                insumos={insumos.map(i => ({ ...i, id: i.id, producto: i.name })) as any}
+                onConfirm={addToCart}
             />
 
             <CheckoutModal

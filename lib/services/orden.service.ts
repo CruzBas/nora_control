@@ -94,7 +94,7 @@ export class OrdenService extends BaseService {
 
     async create(
         clienteNombre: string,
-        items: { receta_id: string; nombre: string; precio: number; cantidad: number }[],
+        items: { receta_id: string; nombre: string; precio: number; cantidad: number; notas?: string | null; extras?: any[] | null }[],
         observaciones?: string
     ): Promise<ApiResponse<Orden>> {
         try {
@@ -126,6 +126,18 @@ export class OrdenService extends BaseService {
                     for (const ri of ingredients) {
                         const amount = Number(ri.cantidad) * item.cantidad;
                         totalRequired[ri.inventario_id] = (totalRequired[ri.inventario_id] || 0) + amount;
+                    }
+                }
+
+                // Also add extras to required inventory if they exist
+                for (const item of items) {
+                    if (item.extras && item.extras.length > 0) {
+                        for (const extra of item.extras) {
+                            if (extra.inventario_id) {
+                                // Assume 1 unit of extra per item quantity
+                                totalRequired[extra.inventario_id] = (totalRequired[extra.inventario_id] || 0) + item.cantidad;
+                            }
+                        }
                     }
                 }
 
@@ -188,7 +200,9 @@ export class OrdenService extends BaseService {
                     nombre: i.nombre,
                     precio: i.precio,
                     cantidad: i.cantidad,
-                    requiere_cocina: recipe?.requiere_cocina ?? true
+                    requiere_cocina: recipe?.requiere_cocina ?? true,
+                    notas: i.notas || null,
+                    extras: i.extras || []
                 };
             });
             const { error: itemsError } = await supabase.from(this.itemTable).insert(itemRows);
@@ -307,13 +321,28 @@ export class OrdenService extends BaseService {
     }
 
 
-    async pagar(id: string, metodoPago: MetodoPago, pagos?: Record<string, number>): Promise<ApiResponse<Orden>> {
+    async pagar(
+        id: string, 
+        metodoPago: MetodoPago, 
+        pagos?: Record<string, number>,
+        moneda: 'CRC' | 'USD' = 'CRC',
+        tipo_cambio: number = 525
+    ): Promise<ApiResponse<Orden>> {
         try {
             const empresaId = await this.getEmpresaId();
             const supabase = await this.getSupabase();
+            
+            const updateData: any = { 
+                estado: 'pagada', 
+                metodo_pago: metodoPago, 
+                pagos,
+                moneda,
+                tipo_cambio
+            };
+
             const { data, error } = await supabase
                 .from(this.ordenTable)
-                .update({ estado: 'pagada', metodo_pago: metodoPago, pagos })
+                .update(updateData)
                 .eq('id', id)
                 .eq('empresa_id', empresaId)
                 .select()
