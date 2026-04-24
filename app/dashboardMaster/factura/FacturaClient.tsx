@@ -182,6 +182,7 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
         let items_data: any[] = [];
         let subtotal = 0;
         let impuesto = 0;
+        let originalImpuesto = 0;
         let total = 0;
         let receptorNombre = '';
         let receptorId = '';
@@ -196,6 +197,7 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
             items_data = factura.detalle || [];
             subtotal = factura.subtotal;
             impuesto = factura.impuesto;
+            originalImpuesto = factura.impuesto;
             total = factura.total;
             receptorNombre = factura.receptor_nombre || '';
             receptorId = factura.receptor_identificacion || '';
@@ -208,6 +210,7 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
             items_data = (orden as any).items || [];
             subtotal = orden.subtotal;
             impuesto = orden.impuesto;
+            originalImpuesto = orden.impuesto;
             total = orden.total;
             receptorNombre = orden.cliente_nombre || '';
 
@@ -341,10 +344,12 @@ export default function FacturaClient({ initialOrdenes, initialCerradas }: Factu
                     <span>Subtotal</span>
                     <span>${fmt(subtotal)}</span>
                 </div>
+                ${(originalImpuesto > 0 || !forceNoIVA) ? `
                 <div class="row">
                     <span>IVA (13%)</span>
-                    <span>${fmt(impuesto)}</span>
+                    <span>${forceNoIVA ? '' : fmt(impuesto)}</span>
                 </div>
+                ` : ''}
 
                 <div class="double-divider"></div>
 

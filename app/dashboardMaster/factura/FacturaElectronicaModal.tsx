@@ -241,11 +241,13 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
         const horaStr = fecha.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
 
         const subtotalPrint = factura.subtotal;
+        const originalImpuesto = factura.impuesto;
         const impuestoPrint = forceNoIVA ? 0 : factura.impuesto;
         const totalPrint = forceNoIVA ? factura.subtotal : factura.total;
 
-        const items = (factura.detalle || []).map(item => {
-            const lineTotal = fmt(item.total);
+        const items = (factura.detalle || []).map((item: any) => {
+            const itemTotal = item.total ?? (item.precio * item.cantidad);
+            const lineTotal = fmt(itemTotal);
             return `<tr><td style="padding:2px 0;font-size:11px;">${item.cantidad}x ${item.nombre}</td><td style="padding:2px 0;font-size:11px;text-align:right;white-space:nowrap;">${lineTotal}</td></tr>`;
         }).join('');
 
@@ -295,7 +297,7 @@ export default function FacturaElectronicaModal({ isOpen, onClose, orden, onSucc
                 <table><tbody>${items}</tbody></table>
                 <div class="divider"></div>
                 <div class="row"><span>Subtotal</span><span>${fmt(subtotalPrint)}</span></div>
-                <div class="row"><span>IVA (13%)</span><span>${fmt(impuestoPrint)}</span></div>
+                ${(originalImpuesto > 0 || !forceNoIVA) ? `<div class="row"><span>IVA (13%)</span><span>${forceNoIVA ? '' : fmt(impuestoPrint)}</span></div>` : ''}
                 <div class="double-divider"></div>
                 <div class="total-row"><span>TOTAL</span><span>${fmt(totalPrint)}</span></div>
                 <div class="divider"></div>
