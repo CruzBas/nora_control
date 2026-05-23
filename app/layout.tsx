@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     "Sistema integral de gestión empresarial. Controla inventarios, ventas, personal y más desde un solo lugar.",
   keywords: ["gestión", "inventario", "ventas", "restaurante", "control", "NÖRA"],
-  authors: [{ name: "NÖRA CONTROL CR" }],
+  authors: [{ name: "NÖRA Tech Solutions" }],
 };
 
 export default function RootLayout({
